@@ -53,9 +53,9 @@ starlette==0.46.0
 sympy==1.13.1
 threadpoolctl==3.5.0
 tokenizers==0.21.0
-torch==2.6.0+cpu
-torchaudio==2.6.0+cpu
-torchvision==0.21.0+cpu
+torch==2.6.0
+torchaudio==2.6.0
+torchvision==0.21.0
 tqdm==4.67.1
 transformers==4.49.0
 typing==3.10.0.0
