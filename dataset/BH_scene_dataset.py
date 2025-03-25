@@ -33,6 +33,17 @@ class BHSceneDataset(Dataset):
         # Apply transforms if specified
         if self.transform:
             image = self.transform(image=image)['image']
+        else:
+            ## if image size is hxw, make it sxs , where s=max(h,w)
+            h, w = image.shape[:2]
+            s = max(h, w)
+            ## add req padding
+            top_padding = (s-h)//2
+            bottom_padding = (s-h) - top_padding
+            left_padding = (s-w)//2
+            right_padding = (s-w) - left_padding
+            image = cv2.copyMakeBorder(image, top_padding, bottom_padding, left_padding, right_padding, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+            image = cv2.resize(image, (224, 224))
             
         return {
             'image': image,
@@ -47,5 +58,6 @@ if __name__ == "__main__":
         transform=None
     )
     print(len(dataset))
-    for i in range(100):
+    for i in range(10):
         print(dataset[i]['image'].shape)
+        print(dataset[i]['language'])
