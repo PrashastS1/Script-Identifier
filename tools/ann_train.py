@@ -108,8 +108,8 @@ def run_experiment(
             model = ANN_base(config["training_params"]["default_param"]["model"])
             model.to(device)        ## move model to device
             optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-            train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=bs, shuffle=True)
-            test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=bs, shuffle=True)
+            train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, num_workers=2)
+            test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=True, num_workers=2)
             model, optimizer, result = train(model, train_loader, test_loader, optimizer, device, epochs)
             ## save the result
             results.append(
@@ -157,7 +157,7 @@ def main():
             "test_f1", 
             os.path.join(save_dir, "test_f1_vs_epoch.png") if config["training_params"]["save_plots"] else None
         )
-        if config["training_params"]["save_results"]:
+        if config["training_params"]["save_plots"]:
             ## save the results
             with open(os.path.join(save_dir, "results.json"), "w") as f:
                 json.dump(results, f)
