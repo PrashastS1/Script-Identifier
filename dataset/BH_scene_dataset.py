@@ -9,6 +9,8 @@ from typing import Dict, Any
 from models.backbones.resnet50 import RESNET_backbone
 from models.backbones.vgg import VGG_backbone
 from models.backbones.vit import VIT_backbone
+import json
+
 
 class BHSceneDataset(Dataset):
     def __init__(
@@ -62,8 +64,18 @@ class BHSceneDataset(Dataset):
             
         
         self.csv = pd.read_csv(self.csv_path, header=0, index_col=None)
+
+        with open('./dataset/language_encode.json') as f:
+            self.language_mapping = json.load(f)
+
+        self.csv['Language'] = self.csv['Language'].apply(lambda x : self.encode_language(x))
+        ## print unique language
+        print(self.csv['Language'].unique())
         logger.info(f"Loaded csv file from {self.csv_path}")
         logger.info(f"Dataset formed with {len(self.csv)} samples")
+
+    def encode_language(self, language: str):
+        return int(self.language_mapping.get(language, 12))
 
     def __len__(self) -> int:
         return len(self.csv)
