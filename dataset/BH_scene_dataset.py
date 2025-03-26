@@ -9,6 +9,8 @@ from typing import Dict, Any
 from models.backbones.resnet50 import RESNET_backbone
 from models.backbones.vgg import VGG_backbone
 from models.backbones.vit import VIT_backbone
+import json
+
 
 class BHSceneDataset(Dataset):
     def __init__(
@@ -62,8 +64,18 @@ class BHSceneDataset(Dataset):
             
         
         self.csv = pd.read_csv(self.csv_path, header=0, index_col=None)
+
+        with open('./dataset/language_encode.json') as f:
+            self.language_mapping = json.load(f)
+
+        self.csv['Language'] = self.csv['Language'].apply(lambda x : self.encode_language(x))
+        ## print unique language
+        # print(self.csv['Language'].unique())
         logger.info(f"Loaded csv file from {self.csv_path}")
         logger.info(f"Dataset formed with {len(self.csv)} samples")
+
+    def encode_language(self, language: str):
+        return int(self.language_mapping.get(language, 12))
 
     def __len__(self) -> int:
         return len(self.csv)
@@ -96,18 +108,14 @@ class BHSceneDataset(Dataset):
             image = torch.tensor(image).permute(2, 0, 1).unsqueeze(0).float()
             assert image.shape == (1, 3, 224, 224), f"Image shape is {image.shape}"
             image = self.backbone(image)
-            # image = image.squeeze(0)
+            image = image.squeeze(0)
         else:
             image = torch.tensor(image).permute(2, 0, 1).float()
             if self.linear_transform:
                 # current dim - 1x3x224x224
                 image = image.reshape(-1)
             
-        return {
-            'image': image,
-            'text': row['Text'],
-            'language': row['Language']
-        }
+        return image, row['Language']
 
 
 if __name__ == "__main__":

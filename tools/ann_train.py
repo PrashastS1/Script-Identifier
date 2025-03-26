@@ -1,0 +1,178 @@
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from sklearn.metrics import (
+    accuracy_score, 
+    f1_score
+)
+from utils.ann_plot_utils import (
+    plot_metric_contour,
+    plot_single_epoch_vs_metric
+)
+from dataset.BH_scene_dataset import BHSceneDataset
+from models.ann import ANN_base
+from typing_extensions import List, Dict, Tuple
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+from tqdm import tqdm
+import json
+import yaml
+import os
+
+
+def test(
+        model: nn.Module, 
+        test_loader: DataLoader, 
+        device: torch.device
+    ) -> Tuple[float, float]:
+    # return the result of the test accuracy and f1 score
+    model.eval()        ## set model to evaluation mode
+    test_loss = 0
+    correct = 0
+    with torch.no_grad():
+        for data, target in test_loader:
+            data, target = data.to(device), target.to(device)  ## move to device
+            output = model(data)        ## get logit
+            test_loss += nn.CrossEntropyLoss()(output, target).item()       ## get loss
+            pred = output.argmax(dim=1, keepdim=True)       ## get prediction
+            correct += pred.eq(target.view_as(pred)).sum().item()    ## get correct prediction
+    test_loss /= len(test_loader.dataset)       ## get average loss
+    accuracy = 100. * correct / len(test_loader.dataset)     ## get accuracy
+    f1 = f1_score(target.cpu().numpy(), pred.cpu().numpy(), average="macro")    ## get f1 score
+    model.train()       ## set model back to training mode
+    return accuracy, f1
+
+
+def train(
+        model: nn.Module, 
+        train_loader: DataLoader, 
+        test_loader: DataLoader, 
+        optimizer: torch.optim.Optimizer, 
+        device: torch.device, 
+        epochs: int
+    ) -> Tuple[nn.Module, torch.optim.Optimizer, List[Dict[str, float]]]:
+    # return the result of the training accuracy and f1 score
+
+    results =[]
+    
+    for epoch in range(epochs):     ## for each epoch
+        model.train()
+        for data, target in tqdm(train_loader):
+            data, target = data.to(device), target.to(device)
+            output = model(data)        ## get logit
+            loss = nn.CrossEntropyLoss()(output, target)    ## get loss
+            optimizer.zero_grad()    ## zero the gradient
+            loss.backward()    ## backpropagation
+            optimizer.step()    ## update the weight
+
+        train_acc, train_f1 = test(model, train_loader, device)   ## get train accuracy and f1 score
+        test_acc, test_f1 = test(model, test_loader, device)    ## get test accuracy and f1 score
+        ## save the result
+        results.append( 
+            {
+                "train_accuracy": train_acc, 
+                "train_f1": train_f1, 
+                "test_accuracy": test_acc, 
+                "test_f1": 
+                test_f1
+            }
+        )       ## save the result
+
+        ## print train and test result
+        print(f"Epoch: {epoch}, Train Accuracy: {train_acc}, Test Accuracy: {test_acc}")
+        print(f"Epoch: {epoch}, Train F1: {train_f1}, Test F1: {test_f1}")
+
+    print(f"Final Train Accuracy: {results[-1]['train_accuracy']}, Final Test Accuracy: {results[-1]['test_accuracy']}")
+    print(f"Final Train F1: {results[-1]['train_f1']}, Final Test F1: {results[-1]['test_f1']}")
+
+    return model, optimizer, results
+    
+
+def run_experiment(
+        config: Dict[str, any],
+        train_dataset: BHSceneDataset, 
+        test_dataset: BHSceneDataset
+    ) -> List[Dict[str, any]]:
+    # return the result of the experiment
+    hyperparameters = config["training_params"]["hyperparameter_range"]
+    learing_rate = hyperparameters["learning_rate"]
+    batch_size = hyperparameters["batch_size"]
+    epochs = config["training_params"]["default_param"]["num_epochs"]
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    results = []
+
+    for lr in learing_rate:     ## for each learning rate
+        for bs in batch_size:   ## for each batch size
+            model = ANN_base(config["training_params"]["default_param"]["model"])
+            model.to(device)        ## move model to device
+            optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+            train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, num_workers=2)
+            test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=True, num_workers=2)
+            model, optimizer, result = train(model, train_loader, test_loader, optimizer, device, epochs)
+            ## save the result
+            results.append(
+                {
+                    "learning_rate": lr,
+                    "batch_size": bs,
+                    "result": result
+                }
+            )
+            del model
+            del optimizer
+    
+    return results
+
+                    
+def main():
+    with open("./conifg/ann_train.yaml") as f:
+        config = yaml.safe_load(f)
+    train_dataset = BHSceneDataset(**config["train_dataset"])   ## get train dataset
+    test_dataset = BHSceneDataset(**config["test_dataset"])    ## get test dataset
+    if config["training_params"]["run_experiments"]:
+        results = run_experiment(config, train_dataset, test_dataset)
+        save_dir = os.path.join(        ## save dir
+            './plots/ann',
+            config["training_params"]["exp_name"]
+        )
+        os.makedirs(save_dir, exist_ok=True)
+        plot_metric_contour(
+            results, 
+            "test_accuracy", 
+            os.path.join(save_dir, "test_accuracy.png") if config["training_params"]["save_plots"] else None
+        )
+        plot_metric_contour(
+            results, 
+            "test_f1", 
+            os.path.join(save_dir, "test_f1.png") if config["training_params"]["save_plots"] else None
+        )
+        plot_single_epoch_vs_metric(
+            results, 
+            "test_accuracy", 
+            os.path.join(save_dir, "test_accuracy_vs_epoch.png") if config["training_params"]["save_plots"] else None
+        )
+        plot_single_epoch_vs_metric(
+            results, 
+            "test_f1", 
+            os.path.join(save_dir, "test_f1_vs_epoch.png") if config["training_params"]["save_plots"] else None
+        )
+        if config["training_params"]["save_plots"]:
+            ## save the results
+            with open(os.path.join(save_dir, "results.json"), "w") as f:
+                json.dump(results, f)
+    else:
+        default_param = config["training_params"]["default_param"]
+        model = ANN_base(default_param["model"])        ## get model
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.to(device)        ## move model to device
+        optimizer = torch.optim.Adam(model.parameters(), lr=default_param["learning_rate"])
+        train_loader = DataLoader(train_dataset, batch_size=default_param["batch_size"], shuffle=True)
+        test_loader = DataLoader(test_dataset, batch_size=default_param["batch_size"], shuffle=True)
+        ## train the model
+        model, optimizer, result = train(model, train_loader, test_loader, optimizer, device, default_param["num_epochs"])
+        print(result)
+        
+
+if __name__=="__main__":
+    main()
