@@ -179,3 +179,4 @@ data/recognition
 *.log
 *.csv
 *.out
+plots
