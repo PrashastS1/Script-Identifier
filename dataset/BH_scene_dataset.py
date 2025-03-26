@@ -108,7 +108,7 @@ class BHSceneDataset(Dataset):
             image = torch.tensor(image).permute(2, 0, 1).unsqueeze(0).float()
             assert image.shape == (1, 3, 224, 224), f"Image shape is {image.shape}"
             image = self.backbone(image)
-            # image = image.squeeze(0)
+            image = image.squeeze(0)
         else:
             image = torch.tensor(image).permute(2, 0, 1).float()
             if self.linear_transform:
