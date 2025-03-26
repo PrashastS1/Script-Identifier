@@ -70,7 +70,7 @@ class BHSceneDataset(Dataset):
 
         self.csv['Language'] = self.csv['Language'].apply(lambda x : self.encode_language(x))
         ## print unique language
-        print(self.csv['Language'].unique())
+        # print(self.csv['Language'].unique())
         logger.info(f"Loaded csv file from {self.csv_path}")
         logger.info(f"Dataset formed with {len(self.csv)} samples")
 
@@ -115,11 +115,7 @@ class BHSceneDataset(Dataset):
                 # current dim - 1x3x224x224
                 image = image.reshape(-1)
             
-        return {
-            'image': image,
-            'text': row['Text'],
-            'language': row['Language']
-        }
+        return image, row['Language']
 
 
 if __name__ == "__main__":
