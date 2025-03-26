@@ -27,20 +27,29 @@ def test(
         device: torch.device
     ) -> Tuple[float, float]:
     # return the result of the test accuracy and f1 score
-    model.eval()        ## set model to evaluation mode
-    test_loss = 0
-    correct = 0
-    with torch.no_grad():
+    model.eval()    ## set the model to eval mode
+
+    correct = 0     ## correct prediction
+    all_preds = []  ## all predictions
+    all_targets = []    ## all targets
+    
+    with torch.no_grad():       ## no gradient
         for data, target in test_loader:
-            data, target = data.to(device), target.to(device)  ## move to device
+            data, target = data.to(device), target.to(device)
             output = model(data)        ## get logit
-            test_loss += nn.CrossEntropyLoss()(output, target).item()       ## get loss
-            pred = output.argmax(dim=1, keepdim=True)       ## get prediction
-            correct += pred.eq(target.view_as(pred)).sum().item()    ## get correct prediction
-    test_loss /= len(test_loader.dataset)       ## get average loss
-    accuracy = 100. * correct / len(test_loader.dataset)     ## get accuracy
-    f1 = f1_score(target.cpu().numpy(), pred.cpu().numpy(), average="macro")    ## get f1 score
-    model.train()       ## set model back to training mode
+            preds = output.argmax(dim=1)    ## get prediction
+            correct += preds.eq(target).sum().item()    ## get correct prediction
+            
+            all_preds.append(preds.cpu().numpy())   ## save the prediction
+            all_targets.append(target.cpu().numpy())    ## save the target
+    
+    accuracy = 100. * correct / len(test_loader.dataset)
+    
+    all_preds = np.concatenate(all_preds)       ## concatenate all the predictions
+    all_targets = np.concatenate(all_targets)   ## concatenate all the targets
+
+    f1 = f1_score(all_targets, all_preds, average="macro")  ## get f1 score
+    model.train()   ## set the model to train mode
     return accuracy, f1
 
 
@@ -55,18 +64,25 @@ def train(
     # return the result of the training accuracy and f1 score
 
     results =[]
-    
+    loss_fn = nn.CrossEntropyLoss()
     for epoch in range(epochs):     ## for each epoch
         model.train()
+        all_preds = []
+        all_targets = []
         for data, target in tqdm(train_loader):
             data, target = data.to(device), target.to(device)
             output = model(data)        ## get logit
-            loss = nn.CrossEntropyLoss()(output, target)    ## get loss
+            loss = loss_fn(output, target)    ## get loss
             optimizer.zero_grad()    ## zero the gradient
             loss.backward()    ## backpropagation
             optimizer.step()    ## update the weight
+            preds = output.argmax(dim=1)
+            all_preds.append(preds.cpu().numpy())
+            all_targets.append(target.cpu().numpy())
 
-        train_acc, train_f1 = test(model, train_loader, device)   ## get train accuracy and f1 score
+        # train_acc, train_f1 = test(model, train_loader, device)   ## get train accuracy and f1 score
+        train_acc = accuracy_score(np.concatenate(all_targets), np.concatenate(all_preds)) * 100
+        train_f1 = f1_score(np.concatenate(all_targets), np.concatenate(all_preds), average="macro")
         test_acc, test_f1 = test(model, test_loader, device)    ## get test accuracy and f1 score
         ## save the result
         results.append( 
@@ -108,8 +124,8 @@ def run_experiment(
             model = ANN_base(config["training_params"]["default_param"]["model"])
             model.to(device)        ## move model to device
             optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-            train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, num_workers=2)
-            test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=True, num_workers=2)
+            train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, num_workers=10)
+            test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=False, num_workers=10)
             model, optimizer, result = train(model, train_loader, test_loader, optimizer, device, epochs)
             ## save the result
             results.append(
@@ -121,6 +137,7 @@ def run_experiment(
             )
             del model
             del optimizer
+            torch.cuda.empty_cache()
     
     return results
 

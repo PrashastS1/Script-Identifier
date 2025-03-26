@@ -42,6 +42,7 @@ class BHSceneDataset(Dataset):
         self.csv_path = os.path.join(self.root_dir, "train.csv" if train_split else "test.csv")
         self.transform = transform
         self.linear_transform = linear_transform
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         if not os.path.exists(self.csv_path):
             raise FileNotFoundError(f"csv file not present at {self.csv_path}")
@@ -50,13 +51,13 @@ class BHSceneDataset(Dataset):
             self.backbone = None
             logger.info("No backbone specified")
         elif backbone == 'resnet50':
-            self.backbone = RESNET_backbone(pretrained=True, gap_dim=gap_dim)
+            self.backbone = RESNET_backbone(pretrained=True, gap_dim=gap_dim).to(self.device)
             logger.info("Using ResNet50 backbone")
         elif backbone == 'vgg':
-            self.backbone = VGG_backbone(pretrained=True, gap_dim=gap_dim)
+            self.backbone = VGG_backbone(pretrained=True, gap_dim=gap_dim).to(self.device)
             logger.info("Using VGG backbone")
         elif backbone == 'vit':
-            self.backbone = VIT_backbone(pretrained=True)
+            self.backbone = VIT_backbone(pretrained=True).to(self.device)
             logger.info("Using VIT backbone")
             logger.warning("gap_dim is not used for ViT backbone")
         else:
@@ -105,7 +106,7 @@ class BHSceneDataset(Dataset):
             image = cv2.resize(image, (224, 224))
 
         if self.backbone is not None:
-            image = torch.tensor(image).permute(2, 0, 1).unsqueeze(0).float()
+            image = torch.tensor(image).permute(2, 0, 1).unsqueeze(0).float().to(self.device)
             assert image.shape == (1, 3, 224, 224), f"Image shape is {image.shape}"
             image = self.backbone(image)
             image = image.squeeze(0)
@@ -129,5 +130,5 @@ if __name__ == "__main__":
     )
     print(len(dataset))
     for i in range(10):
-        print(dataset[i]['image'].shape)
-        print(dataset[i]['language'])
+        img, lang = dataset[i]
+        print(f"Image shape: {img.shape}, Language: {lang}")
