@@ -180,3 +180,6 @@ data/recognition
 *.csv
 *.out
 plots
+.DS_Store
+data/.DS_Store
+models/.DS_Store
