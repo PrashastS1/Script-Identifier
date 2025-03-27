@@ -124,8 +124,8 @@ def run_experiment(
             model = ANN_base(config["training_params"]["default_param"]["model"])
             model.to(device)        ## move model to device
             optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-            train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, num_workers=10)
-            test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=False, num_workers=10)
+            train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
+            test_loader = DataLoader(test_dataset, batch_size=512, shuffle=False)
             model, optimizer, result = train(model, train_loader, test_loader, optimizer, device, epochs)
             ## save the result
             results.append(
