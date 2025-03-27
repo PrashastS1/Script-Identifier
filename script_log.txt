@@ -1,0 +1,16 @@
+2025-03-27 03:10:29,044 - INFO - Script started.
+2025-03-27 03:10:29,137 - INFO - Loading dataset: data/recognition/train.csv
+2025-03-27 03:13:07,511 - INFO - Loading dataset: data/recognition/test.csv
+2025-03-27 03:13:52,617 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-27 03:15:56,833 - INFO - Model Accuracy: 75.31%
+2025-03-27 03:15:56,840 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.94      0.75      0.83     18302
+           1       0.40      0.78      0.53      4034
+
+    accuracy                           0.75     22336
+   macro avg       0.67      0.76      0.68     22336
+weighted avg       0.84      0.75      0.78     22336
+
+2025-03-27 03:15:56,849 - INFO - Script finished.
