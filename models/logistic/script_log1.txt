@@ -1,0 +1,4 @@
+2025-03-27 19:23:13,615 - INFO - Script started.
+2025-03-27 19:23:18,783 - INFO - Loading dataset: d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/train.csv for language: bengali
+2025-03-27 19:23:30,535 - INFO - Loading dataset: d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/test.csv for language: bengali
+2025-03-27 19:23:33,523 - INFO - Train set size: 4968, Test set size: 1161
