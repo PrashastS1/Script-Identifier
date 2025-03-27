@@ -1,5 +1,6 @@
 import os
 import cv2
+import datetime
 import numpy as np
 import pandas as pd
 import logging
@@ -126,8 +127,14 @@ print("Classification Report:\n", classification_report(y_test, y_pred))
 logging.info("Script finished.")
 
 # ===== PLOTTING DECISION BOUNDARY =====
-def plot_decision_boundary(X, y, model):
-    """Plots decision boundary for logistic regression in 2D space using PCA."""
+
+
+# Define the directory to save plots
+plots_dir = os.path.join(script_dir, "plots")
+os.makedirs(plots_dir, exist_ok=True)  # Ensure the directory exists
+
+def save_plot_with_legend(X, y, model, language):
+    """Plots decision boundary with legend and saves the plot with language, date, and time."""
     pca = PCA(n_components=2)
     X_reduced = pca.fit_transform(X)
 
@@ -138,12 +145,27 @@ def plot_decision_boundary(X, y, model):
     Z = model.predict(pca.inverse_transform(np.c_[xx.ravel(), yy.ravel()]))
     Z = Z.reshape(xx.shape)
 
-    plt.contourf(xx, yy, Z, alpha=0.3)
-    plt.scatter(X_reduced[:, 0], X_reduced[:, 1], c=y, cmap=plt.cm.Paired, edgecolors='k')
+    plt.figure(figsize=(8, 6))
+    plt.contourf(xx, yy, Z, alpha=0.3, cmap=plt.cm.Paired)
+    scatter = plt.scatter(X_reduced[:, 0], X_reduced[:, 1], c=y, cmap=plt.cm.Paired, edgecolors='k', label="Data Points")
+    
+    # Add legend with class labels
+    plt.legend(handles=scatter.legend_elements()[0], labels=["Not " + language, language])
+    
     plt.xlabel("Principal Component 1")
     plt.ylabel("Principal Component 2")
-    plt.title(f"Logistic Regression Decision Boundary for {selected_language}")
+    plt.title(f"Decision Boundary for {language}")
+
+    # Save plot
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{language}_{timestamp}.png"
+    plot_path = os.path.join(plots_dir, filename)
+    plt.savefig(plot_path)
+    print(f"Plot saved at: {plot_path}")
+
     plt.show()
 
-# Plot decision boundary for training data
-plot_decision_boundary(X_train, y_train, model)
+# Save and show the decision boundary plot
+save_plot_with_legend(X_train, y_train, model, selected_language)
+
+
