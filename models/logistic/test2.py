@@ -47,37 +47,48 @@ def select_language():
 logging.basicConfig(filename=log_file, level=logging.INFO, 
                     format="%(asctime)s - %(levelname)s - %(message)s", filemode="a")
 logging.info("Script started.")
-
-# Function to load dataset correctly from CSV
 def load_dataset(csv_path, selected_language):
-    df = pd.read_csv(csv_path, skiprows=1, header=None, names=["image_path", "annotation", "script"])  # Skip header
+    df = pd.read_csv(csv_path, skiprows=1, header=None, names=["image_path", "annotation", "script"])
     X, y = [], []
-
-    logging.info(f"Loading dataset: {csv_path} for language: {selected_language}")
+    
+    logging.info(f"Loading dataset from {csv_path} for language: {selected_language}")
     
     for _, row in tqdm(df.iterrows(), total=len(df), desc="Loading Images"):
-        img_path = os.path.join(dataset_path, row["image_path"].replace("\\", "/"))  # Ensure uniform paths
-        script = row["script"].strip().lower()
-
-        if script != selected_language:
-            continue  # Skip if not selected language
-
-        if not os.path.exists(img_path):  # Check if file exists
-            logging.warning(f"Image file not found: {img_path}")
+        img_path = os.path.join(dataset_path, row["image_path"].replace("\\", "/"))  
+        
+        if not os.path.exists(img_path):
+            logging.warning(f"File not found: {img_path}")
             continue
+
+        # Extract the folder name (which represents the language group)
+        folder_name = os.path.basename(os.path.dirname(img_path)).lower()
+
+        # Assign label: 1 if selected language, else 0 (no extra filtering needed)
+        label = 1 if folder_name == selected_language else 0
 
         img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
         if img is None:
-            logging.warning(f"Unable to read image: {img_path}")
-            continue  # Skip this image
+            logging.warning(f"Error reading image: {img_path}")
+            continue
 
         img = cv2.resize(img, (64, 64))
         hog_features = hog(img, pixels_per_cell=(8, 8), cells_per_block=(2, 2), feature_vector=True)
 
         X.append(hog_features)
-        y.append(1)  # All images of selected language are labeled as 1
+        y.append(label)
 
-    return np.array(X), np.array(y)
+    # Convert to NumPy array
+    X, y = np.array(X), np.array(y)
+
+    # 🔥 Fix: Ensure at least two classes exist
+    unique_classes = np.unique(y)
+    if len(unique_classes) < 2:
+        logging.error(f"Only one class found: {unique_classes}. Check dataset.")
+        print(f"Error: Only one class found ({unique_classes}). Adjust dataset!")
+        exit()
+
+    return X, y
+
 
 # Select language
 selected_language = select_language()
