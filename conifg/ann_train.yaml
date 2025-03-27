@@ -1,7 +1,7 @@
 train_dataset:
   root_dir: "data/recognition"
   train_split: True 
-  transform: null
+  transformation: True
   linear_transform: True
   backbone: resnet50
   gap_dim:  7
@@ -9,7 +9,7 @@ train_dataset:
 test_dataset:
   root_dir: "data/recognition"
   train_split: False
-  transform: null
+  transformation: True
   linear_transform: True
   backbone: resnet50
   gap_dim:  7

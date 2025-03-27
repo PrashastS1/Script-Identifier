@@ -34,7 +34,7 @@ def test(
     all_targets = []    ## all targets
     
     with torch.no_grad():       ## no gradient
-    model.eval()    ## set the model to eval mode
+        model.eval()    ## set the model to eval mode
 
     correct = 0     ## correct prediction
     all_preds = []  ## all predictions
@@ -45,19 +45,6 @@ def test(
             data, target = data.to(device), target.to(device)
             data, target = data.to(device), target.to(device)
             output = model(data)        ## get logit
-            preds = output.argmax(dim=1)    ## get prediction
-            correct += preds.eq(target).sum().item()    ## get correct prediction
-            
-            all_preds.append(preds.cpu().numpy())   ## save the prediction
-            all_targets.append(target.cpu().numpy())    ## save the target
-    
-    accuracy = 100. * correct / len(test_loader.dataset)
-    
-    all_preds = np.concatenate(all_preds)       ## concatenate all the predictions
-    all_targets = np.concatenate(all_targets)   ## concatenate all the targets
-
-    f1 = f1_score(all_targets, all_preds, average="macro")  ## get f1 score
-    model.train()   ## set the model to train mode
             preds = output.argmax(dim=1)    ## get prediction
             correct += preds.eq(target).sum().item()    ## get correct prediction
             
