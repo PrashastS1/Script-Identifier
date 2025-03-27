@@ -34,9 +34,30 @@ def test(
     all_targets = []    ## all targets
     
     with torch.no_grad():       ## no gradient
+    model.eval()    ## set the model to eval mode
+
+    correct = 0     ## correct prediction
+    all_preds = []  ## all predictions
+    all_targets = []    ## all targets
+    
+    with torch.no_grad():       ## no gradient
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
+            data, target = data.to(device), target.to(device)
             output = model(data)        ## get logit
+            preds = output.argmax(dim=1)    ## get prediction
+            correct += preds.eq(target).sum().item()    ## get correct prediction
+            
+            all_preds.append(preds.cpu().numpy())   ## save the prediction
+            all_targets.append(target.cpu().numpy())    ## save the target
+    
+    accuracy = 100. * correct / len(test_loader.dataset)
+    
+    all_preds = np.concatenate(all_preds)       ## concatenate all the predictions
+    all_targets = np.concatenate(all_targets)   ## concatenate all the targets
+
+    f1 = f1_score(all_targets, all_preds, average="macro")  ## get f1 score
+    model.train()   ## set the model to train mode
             preds = output.argmax(dim=1)    ## get prediction
             correct += preds.eq(target).sum().item()    ## get correct prediction
             
@@ -65,13 +86,17 @@ def train(
 
     results =[]
     loss_fn = nn.CrossEntropyLoss()
+    loss_fn = nn.CrossEntropyLoss()
     for epoch in range(epochs):     ## for each epoch
         model.train()
+        all_preds = []
+        all_targets = []
         all_preds = []
         all_targets = []
         for data, target in tqdm(train_loader):
             data, target = data.to(device), target.to(device)
             output = model(data)        ## get logit
+            loss = loss_fn(output, target)    ## get loss
             loss = loss_fn(output, target)    ## get loss
             optimizer.zero_grad()    ## zero the gradient
             loss.backward()    ## backpropagation
@@ -79,7 +104,13 @@ def train(
             preds = output.argmax(dim=1)
             all_preds.append(preds.cpu().numpy())
             all_targets.append(target.cpu().numpy())
+            preds = output.argmax(dim=1)
+            all_preds.append(preds.cpu().numpy())
+            all_targets.append(target.cpu().numpy())
 
+        # train_acc, train_f1 = test(model, train_loader, device)   ## get train accuracy and f1 score
+        train_acc = accuracy_score(np.concatenate(all_targets), np.concatenate(all_preds)) * 100
+        train_f1 = f1_score(np.concatenate(all_targets), np.concatenate(all_preds), average="macro")
         # train_acc, train_f1 = test(model, train_loader, device)   ## get train accuracy and f1 score
         train_acc = accuracy_score(np.concatenate(all_targets), np.concatenate(all_preds)) * 100
         train_f1 = f1_score(np.concatenate(all_targets), np.concatenate(all_preds), average="macro")
@@ -137,6 +168,7 @@ def run_experiment(
             )
             del model
             del optimizer
+            torch.cuda.empty_cache()
             torch.cuda.empty_cache()
     
     return results
