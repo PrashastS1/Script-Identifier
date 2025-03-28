@@ -235,8 +235,10 @@ def load_dataset(csv_path, selected_lang):
             logging.warning(f"File not found: {img_path}")
             continue
 
-        folder_name = os.path.basename(os.path.dirname(img_path)).lower()
-        label = 1 if folder_name == selected_lang else 0
+        # folder_name = os.path.basename(os.path.dirname(img_path)).lower()
+        # label = 1 if folder_name == selected_lang else 0
+
+        label = 1 if row["script"].lower() == selected_lang else 0
 
         img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
         if img is None:
