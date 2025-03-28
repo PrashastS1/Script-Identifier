@@ -648,7 +648,7 @@ print("PCA completed.", flush=True)
 # Handle unbalanced dataset with SMOTE
 logging.info("Applying SMOTE to handle unbalanced dataset...")
 print("Applying SMOTE...", flush=True)
-smote = SMOTE(random_state=42, sampling_strategy=0.5)  # Adjust ratio to 1:2 (Class 1:Class 0)
+smote = SMOTE(random_state=42, sampling_strategy=0.3)  # Adjust ratio to 1:2 (Class 1:Class 0)
 x_train, y_train = smote.fit_resample(x_train, y_train)
 logging.info(f"After SMOTE, train set size: {len(x_train)}")
 print(f"After SMOTE, train set size: {len(x_train)}", flush=True)
@@ -669,7 +669,7 @@ print("Tuning KNN hyperparameters...", flush=True)
 # Train KNN model with best k
 best_k=3
 print(f"Training KNN with best k={best_k}...", flush=True)
-model = KNeighborsClassifier(n_neighbors=best_k, weights='distance', n_jobs=-1)
+model = KNeighborsClassifier(n_neighbors=best_k, weights='distance', metric='manhattan', n_jobs=-1)
 model.fit(x_train, y_train)
 print("KNN model training completed.", flush=True)
 
@@ -733,3 +733,6 @@ def save_plot(x, y, model, language):
     print("Visualization completed.", flush=True)
 
 # save_plot(x_train, y_train, model, selected_lang)
+
+#implement the following
+# 1.confusion matrix 2. elbow curve (maybe) 3.Decision boundary plot 4.scatter plot
