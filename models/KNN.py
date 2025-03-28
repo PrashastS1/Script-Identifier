@@ -462,7 +462,7 @@ print(f"After SMOTE, train set size: {len(x_train)}", flush=True)
 
 # Train KNN model
 print("Training KNN model...", flush=True)
-model = KNeighborsClassifier(n_neighbors=4, weights='distance', n_jobs=-1)
+model = KNeighborsClassifier(n_neighbors=3, weights='distance', n_jobs=-1)
 model.fit(x_train, y_train)
 print("KNN model training completed.", flush=True)
 
