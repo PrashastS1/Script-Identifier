@@ -16,7 +16,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(script_dir, "../../data/recognition/")
 train_csv = os.path.join(data_path, "train.csv")
 test_csv = os.path.join(data_path, "test.csv")
-logger = os.path.join(script_dir, "script_log1.txt")
+logger = os.path.join(script_dir, "results.txt")
 
 Lmap = {
     1: "assamese",
