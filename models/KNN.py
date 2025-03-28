@@ -192,8 +192,10 @@ from imblearn.over_sampling import SMOTE  # For handling unbalanced datasets
 
 train_csv = "/Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/train.csv"
 test_csv = "/Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/test.csv"
-data_path = "/Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/"
+# data_path = "/Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/"
+data_path = "/Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/"
 script_dir = os.path.dirname(os.path.abspath(__file__))
+logger = os.path.join(script_dir, "script_log_knn_hog.txt")
 
 # Language mapping
 Lmap = {
