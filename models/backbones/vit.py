@@ -15,7 +15,7 @@ class VIT_backbone(nn.Module):
         self.model = model
         for param in self.model.parameters():
             param.requires_grad = False
-        logger.info("All VGG16 parameters are frozen.")
+        logger.info("All VIT parameters are frozen.")
         feature_extractor = nn.Sequential(*list(model.children())[:-1])
         self.conv = feature_extractor[0]
         self.encoder = feature_extractor[1]
