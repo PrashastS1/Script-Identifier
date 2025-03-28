@@ -184,11 +184,16 @@ from sklearn.decomposition import PCA
 from imblearn.over_sampling import SMOTE  # For handling unbalanced datasets
 
 # Paths
+# script_dir = os.path.dirname(os.path.abspath(__file__))
+# data_path = os.path.join(script_dir, "../../data/recognition/")
+# train_csv = os.path.join(data_path, "train.csv")
+# test_csv = os.path.join(data_path, "test.csv")
+# logger = os.path.join(script_dir, "script_log_knn_hog.txt")
+
+train_csv = "/Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/train.csv"
+test_csv = "/Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/test.csv"
+data_path = "/Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/"
 script_dir = os.path.dirname(os.path.abspath(__file__))
-data_path = os.path.join(script_dir, "../../data/recognition/")
-train_csv = os.path.join(data_path, "train.csv")
-test_csv = os.path.join(data_path, "test.csv")
-logger = os.path.join(script_dir, "script_log_knn_hog.txt")
 
 # Language mapping
 Lmap = {
