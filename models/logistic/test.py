@@ -16,7 +16,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(script_dir, "../../data/recognition/")
 train_csv = os.path.join(data_path, "train.csv")
 test_csv = os.path.join(data_path, "test.csv")
-logging = os.path.join(script_dir, "script_log1.txt")
+logger = os.path.join(script_dir, "script_log1.txt")
 
 Lmap = {
     1: "assamese",
@@ -40,7 +40,7 @@ def select_lang():
     choice = int(input("\nEnter your choice: "))
     return Lmap.get(choice, None)
 
-logging.basicConfig(filename=logging, level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", filemode="a")
+logging.basicConfig(filename=logger, level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", filemode="a")
 logging.info("Script started.")
 
 def load_dataset(csv_path, selected_lang):
@@ -101,8 +101,7 @@ logging.info("Classification Report:\n" + classification_report(y_test, y_pred))
 print(f"Model Accuracy: {accuracy * 100:.2f}%")
 print("Classification Report:\n", classification_report(y_test, y_pred))
 
-logging.info("Script finished.")
-logging.info("=========================================")
+logging.info("Script finished.")\
 
 plots_dir = os.path.join(script_dir, "plots")
 os.makedirs(plots_dir, exist_ok=True)
@@ -132,6 +131,7 @@ def save_plot(x, y, model, language):
     plt.savefig(plot_path)
     
     logging.info(f"Saved decision boundary plot for {language} at {plot_path}")
+    logging.info("=========================================")
     print(f"Plot saved at: {plot_path}")
     plt.show()
 
