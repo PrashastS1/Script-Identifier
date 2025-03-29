@@ -532,11 +532,11 @@ model = GaussianNB()
 model.fit(x_train, y_train)
 print("Naive Bayes model training completed.", flush=True)
 
-# Cross-validation
-print("Performing cross-validation...", flush=True)
-scores = cross_val_score(model, x_train, y_train, cv=5, scoring='f1_macro')
-print(f"Cross-validation F1-macro scores: {scores}", flush=True)
-print(f"Average F1-macro: {np.mean(scores):.2f} (+/- {np.std(scores) * 2:.2f})", flush=True)
+# # Cross-validation
+# print("Performing cross-validation...", flush=True)
+# scores = cross_val_score(model, x_train, y_train, cv=5, scoring='f1_macro')
+# print(f"Cross-validation F1-macro scores: {scores}", flush=True)
+# print(f"Average F1-macro: {np.mean(scores):.2f} (+/- {np.std(scores) * 2:.2f})", flush=True)
 
 # Predict with progress bar and threshold optimization
 print("Predicting probabilities on test set...", flush=True)
