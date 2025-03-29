@@ -17,6 +17,8 @@ import seaborn as sns
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve, auc
 from sklearn.metrics import precision_recall_curve, average_precision_score
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import GridSearchCV
 
 # Paths
 train_csv = "/Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/train.csv"
