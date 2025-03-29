@@ -1,0 +1,20 @@
+2025-03-29 12:22:28,176 - INFO - Script started.
+2025-03-29 12:22:31,906 - INFO - Loading dataset from /Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/train.csv for language: assamese
+2025-03-29 12:23:42,002 - INFO - Loading dataset from /Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/test.csv for language: assamese
+2025-03-29 12:24:01,699 - INFO - Train set size: 10000, Test set size: 5000
+2025-03-29 12:24:02,432 - INFO - Applying SMOTE to handle unbalanced dataset...
+2025-03-29 12:24:03,119 - INFO - After SMOTE, train set size: 14760
+2025-03-29 12:24:03,404 - INFO - Model Accuracy: 61.84%
+2025-03-29 12:24:03,407 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.78      0.67      0.72      3659
+           1       0.35      0.47      0.40      1341
+
+    accuracy                           0.62      5000
+   macro avg       0.56      0.57      0.56      5000
+weighted avg       0.66      0.62      0.63      5000
+
+2025-03-29 12:24:03,412 - INFO - Script finished.
+2025-03-29 12:24:04,313 - INFO - Saved decision boundary plot for assamese at /Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/models/plots/assamese_naive_bayes_hog_20250329_122404.png
+2025-03-29 12:24:04,313 - INFO - =========================================
