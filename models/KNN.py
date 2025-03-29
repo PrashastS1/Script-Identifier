@@ -705,6 +705,37 @@ print("Script finished.", flush=True)
 plots_dir = os.path.join(script_dir, "plots")
 os.makedirs(plots_dir, exist_ok=True)
 
+def save_plot(x, y, model, language, plots_dir):  # Renamed to avoid overwriting built-in 'plot'
+    print("Generating decision boundary visualization...", flush=True)
+    pca = PCA(n_components=2)
+    x_reduced = pca.fit_transform(x)
+
+    x_min, x_max = x_reduced[:, 0].min() - 1, x_reduced[:, 0].max() + 1
+    y_min, y_max = x_reduced[:, 1].min() - 1, x_reduced[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 50), np.linspace(y_min, y_max, 50))  # Reduced resolution
+
+    Z = model.predict(pca.inverse_transform(np.c_[xx.ravel(), yy.ravel()]))
+    Z = Z.reshape(xx.shape)
+
+    plt.figure(figsize=(8, 6))
+    plt.contourf(xx, yy, Z, alpha=0.3, cmap=plt.cm.Paired)
+    scatter = plt.scatter(x_reduced[:, 0], x_reduced[:, 1], c=y, cmap=plt.cm.Paired, edgecolors='k', label="Data Points")
+    plt.legend(handles=scatter.legend_elements()[0], labels=["Not " + language, language])
+    plt.xlabel("Principal Component 1")
+    plt.ylabel("Principal Component 2")
+    plt.title(f"Decision Boundary for {language} (KNN + HOG)")
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{language}_knn_hog_{timestamp}.png"
+    plot_path = os.path.join(plots_dir, filename)
+    plt.savefig(plot_path)
+    plt.close()  # Close the figure to free memory
+    
+    logging.info(f"Saved decision boundary plot for {language} at {plot_path}")
+    logging.info("=========================================")
+    print(f"Decision boundary plot saved at: {plot_path}", flush=True)
+    print("Decision boundary visualization completed.", flush=True)
+
 def save_confusion_matrix_plot(y_true, y_pred, language, plots_dir):
     cm = confusion_matrix(y_true, y_pred)
     plt.figure(figsize=(6, 6))
@@ -719,7 +750,7 @@ def save_confusion_matrix_plot(y_true, y_pred, language, plots_dir):
     plot_path = os.path.join(plots_dir, filename)
     plt.savefig(plot_path)
     plt.close()
-    print(f"Confusion matrix plot saved at: {plot_path}")
+    print(f"Confusion matrix plot saved at: {plot_path}", flush=True)
 
 def save_roc_curve_plot(y_true, y_pred_proba, language, plots_dir):
     fpr, tpr, _ = roc_curve(y_true, y_pred_proba)
@@ -740,7 +771,7 @@ def save_roc_curve_plot(y_true, y_pred_proba, language, plots_dir):
     plot_path = os.path.join(plots_dir, filename)
     plt.savefig(plot_path)
     plt.close()
-    print(f"ROC curve plot saved at: {plot_path}")
+    print(f"ROC curve plot saved at: {plot_path}", flush=True)
 
 def save_pr_curve_plot(y_true, y_pred_proba, language, plots_dir):
     precision, recall, _ = precision_recall_curve(y_true, y_pred_proba)
@@ -758,40 +789,10 @@ def save_pr_curve_plot(y_true, y_pred_proba, language, plots_dir):
     plot_path = os.path.join(plots_dir, filename)
     plt.savefig(plot_path)
     plt.close()
-    print(f"Precision-Recall curve plot saved at: {plot_path}")
+    print(f"Precision-Recall curve plot saved at: {plot_path}", flush=True)
 
-def save_plot(x, y, model, language):
-    print("Generating visualization...", flush=True)
-    pca = PCA(n_components=2)
-    x_reduced = pca.fit_transform(x)
-
-    x_min, x_max = x_reduced[:, 0].min() - 1, x_reduced[:, 0].max() + 1
-    y_min, y_max = x_reduced[:, 1].min() - 1, x_reduced[:, 1].max() + 1
-    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100), np.linspace(y_min, y_max, 100))
-
-    Z = model.predict(pca.inverse_transform(np.c_[xx.ravel(), yy.ravel()]))
-    Z = Z.reshape(xx.shape)
-
-    plt.figure(figsize=(8, 6))
-    plt.contourf(xx, yy, Z, alpha=0.3, cmap=plt.cm.Paired)
-    scatter = plt.scatter(x_reduced[:, 0], x_reduced[:, 1], c=y, cmap=plt.cm.Paired, edgecolors='k', label="Data Points")
-    plt.legend(handles=scatter.legend_elements()[0], labels=["Not " + language, language])
-    plt.xlabel("Principal Component 1")
-    plt.ylabel("Principal Component 2")
-    plt.title(f"Decision Boundary for {language} (KNN + HOG)")
-
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{language}_knn_hog_{timestamp}.png"
-    plot_path = os.path.join(plots_dir, filename)
-    plt.savefig(plot_path)
-    
-    logging.info(f"Saved decision boundary plot for {language} at {plot_path}")
-    logging.info("=========================================")
-    print(f"Plot saved at: {plot_path}", flush=True)
-    plt.show()
-    print("Visualization completed.", flush=True)
-
-save_plot(x_train, y_train, model, selected_lang)
+# Call plotting functions
+save_plot(x_train, y_train, model, selected_lang, plots_dir)  # Pass plots_dir
 save_confusion_matrix_plot(y_test, y_pred, selected_lang, plots_dir)
 save_roc_curve_plot(y_test, y_pred_proba, selected_lang, plots_dir)
 save_pr_curve_plot(y_test, y_pred_proba, selected_lang, plots_dir)
