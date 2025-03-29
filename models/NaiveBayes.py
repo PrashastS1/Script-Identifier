@@ -596,49 +596,23 @@ plt.savefig(cm_path)
 plt.show()
 print(f"Confusion matrix saved at: {cm_path}", flush=True)
 
-# Visualization: Decision Boundary Plot
+# Visualization
 plots_dir = os.path.join(script_dir, "plots")
 os.makedirs(plots_dir, exist_ok=True)
 
-# def save_decision_boundary_plot(x, y, model, language):
-#     print("Generating decision boundary plot...", flush=True)
-#     pca = PCA(n_components=2)
-#     x_reduced = pca.fit_transform(x)
-
-#     x_min, x_max = x_reduced[:, 0].min() - 1, x_reduced[:, 0].max() + 1
-#     y_min, y_max = x_reduced[:, 1].min() - 1, x_reduced[:, 1].max() + 1
-#     xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100), np.linspace(y_min, y_max, 100))
-
-#     Z = []
-#     for i in tqdm(range(len(xx.ravel())), desc="Predicting for plot", dynamic_ncols=True, mininterval=0.1):
-#         point = pca.inverse_transform([xx.ravel()[i], yy.ravel()[i]])
-#         proba = model.predict_proba([point])[0, 1]
-#         pred = 1 if proba >= best_threshold else 0
-#         Z.append(pred)
-#     Z = np.array(Z).reshape(xx.shape)
-
-#     plt.figure(figsize=(8, 6))
-#     plt.contourf(xx, yy, Z, alpha=0.3, cmap=plt.cm.Paired)
-#     scatter = plt.scatter(x_reduced[:, 0], x_reduced[:, 1], c=y, cmap=plt.cm.Paired, edgecolors='k', label="Data Points")
-#     plt.legend(handles=scatter.legend_elements()[0], labels=["Not " + language, language])
-#     plt.xlabel("Principal Component 1")
-#     plt.ylabel("Principal Component 2")
-#     plt.title(f"Decision Boundary for {language} (Naive Bayes + HOG)")
-
-#     filename = f"{language}_naive_bayes_hog_decision_boundary_{timestamp}.png"
-#     plot_path = os.path.join(plots_dir, filename)
-#     plt.savefig(plot_path)
-#     plt.show()
-#     print(f"Decision boundary plot saved at: {plot_path}", flush=True)
-
 def save_decision_boundary_plot(x, y, model, language, best_threshold, plots_dir):
     print("Generating decision boundary plot...", flush=True)
+    # Subsample both x and y consistently
+    sample_size = min(5000, len(x))  # Use min to avoid index errors if dataset is smaller
+    x_sampled = x[:sample_size]
+    y_sampled = y[:sample_size]
+    
     pca = PCA(n_components=2)
-    x_reduced = pca.fit_transform(x)  # Subsample to 5,000 points for speed
+    x_reduced = pca.fit_transform(x_sampled)
 
     x_min, x_max = x_reduced[:, 0].min() - 1, x_reduced[:, 0].max() + 1
     y_min, y_max = x_reduced[:, 1].min() - 1, x_reduced[:, 1].max() + 1
-    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 50), np.linspace(y_min, y_max, 50))  # Reduced to 50x50
+    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 50), np.linspace(y_min, y_max, 50))  # 50x50 grid
 
     # Vectorize prediction for efficiency
     grid_points = pca.inverse_transform(np.c_[xx.ravel(), yy.ravel()])
@@ -647,7 +621,7 @@ def save_decision_boundary_plot(x, y, model, language, best_threshold, plots_dir
 
     plt.figure(figsize=(8, 6))
     plt.contourf(xx, yy, Z, alpha=0.3, cmap=plt.cm.Paired)
-    scatter = plt.scatter(x_reduced[:, 0], x_reduced[:, 1], c=y[:5000], cmap=plt.cm.Paired, edgecolors='k', label="Data Points")
+    scatter = plt.scatter(x_reduced[:, 0], x_reduced[:, 1], c=y_sampled, cmap=plt.cm.Paired, edgecolors='k', label="Data Points")
     plt.legend(handles=scatter.legend_elements()[0], labels=["Not " + language, language])
     plt.xlabel("Principal Component 1")
     plt.ylabel("Principal Component 2")
@@ -660,32 +634,18 @@ def save_decision_boundary_plot(x, y, model, language, best_threshold, plots_dir
     plt.close()  # Close figure to free memory
     print(f"Decision boundary plot saved at: {plot_path}", flush=True)
 
-# # Visualization: Scatter Plot
-# def save_scatter_plot(x, y, language):
-#     print("Generating scatter plot...", flush=True)
-#     pca = PCA(n_components=2)
-#     x_reduced = pca.fit_transform(x)
-
-#     plt.figure(figsize=(8, 6))
-#     scatter = plt.scatter(x_reduced[:, 0], x_reduced[:, 1], c=y, cmap=plt.cm.Paired, edgecolors='k', alpha=0.6)
-#     plt.legend(handles=scatter.legend_elements()[0], labels=["Not " + language, language])
-#     plt.xlabel("Principal Component 1")
-#     plt.ylabel("Principal Component 2")
-#     plt.title(f"Scatter Plot for {language} (PCA Reduced)")
-
-#     filename = f"{language}_scatter_plot_{timestamp}.png"
-#     plot_path = os.path.join(plots_dir, filename)
-#     plt.savefig(plot_path)
-#     plt.show()
-#     print(f"Scatter plot saved at: {plot_path}", flush=True)
-
 def save_scatter_plot(x, y, language, plots_dir):
     print("Generating scatter plot...", flush=True)
+    # Subsample both x and y consistently
+    sample_size = min(5000, len(x))  # Use min to avoid index errors if dataset is smaller
+    x_sampled = x[:sample_size]
+    y_sampled = y[:sample_size]
+    
     pca = PCA(n_components=2)
-    x_reduced = pca.fit_transform(x[:5000])  # Subsample to 5,000 points for speed
+    x_reduced = pca.fit_transform(x_sampled)
 
     plt.figure(figsize=(8, 6))
-    scatter = plt.scatter(x_reduced[:, 0], x_reduced[:, 1], c=y[:5000], cmap=plt.cm.Paired, edgecolors='k', alpha=0.6)
+    scatter = plt.scatter(x_reduced[:, 0], x_reduced[:, 1], c=y_sampled, cmap=plt.cm.Paired, edgecolors='k', alpha=0.6)
     plt.legend(handles=scatter.legend_elements()[0], labels=["Not " + language, language])
     plt.xlabel("Principal Component 1")
     plt.ylabel("Principal Component 2")

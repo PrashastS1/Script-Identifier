@@ -18,3 +18,20 @@ weighted avg       0.66      0.62      0.63      5000
 2025-03-29 12:24:03,412 - INFO - Script finished.
 2025-03-29 12:24:04,313 - INFO - Saved decision boundary plot for assamese at /Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/models/plots/assamese_naive_bayes_hog_20250329_122404.png
 2025-03-29 12:24:04,313 - INFO - =========================================
+2025-03-29 13:04:50,419 - INFO - Script started.
+2025-03-29 13:04:51,632 - INFO - Loading dataset from /Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/train.csv for language: assamese
+2025-03-29 13:06:01,976 - INFO - Loading dataset from /Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/test.csv for language: assamese
+2025-03-29 13:06:21,543 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-29 13:06:28,596 - INFO - Applying SMOTE to handle unbalanced dataset...
+2025-03-29 13:06:29,521 - INFO - After SMOTE, train set size: 105750
+2025-03-29 13:07:33,647 - INFO - Model Accuracy: 50.54%
+2025-03-29 13:07:33,662 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.95      0.50      0.66     20993
+           1       0.07      0.57      0.12      1343
+
+    accuracy                           0.51     22336
+   macro avg       0.51      0.54      0.39     22336
+weighted avg       0.90      0.51      0.62     22336
+
