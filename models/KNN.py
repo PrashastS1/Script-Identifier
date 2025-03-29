@@ -640,7 +640,7 @@ print("Feature scaling completed.", flush=True)
 
 # Apply PCA to reduce dimensionality
 print("Applying PCA to reduce dimensionality...", flush=True)
-pca = PCA(n_components=200)  # Reduce to 100 dimensions
+pca = PCA(n_components=100)  # Reduce to 100 dimensions
 x_train = pca.fit_transform(x_train)
 x_test = pca.transform(x_test)
 print("PCA completed.", flush=True)
