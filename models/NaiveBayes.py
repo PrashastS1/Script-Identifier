@@ -13,6 +13,8 @@ from sklearn.metrics import accuracy_score, classification_report, f1_score, con
 from sklearn.decomposition import PCA
 from sklearn.model_selection import cross_val_score
 from imblearn.over_sampling import SMOTE
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import GridSearchCV
 
 # Paths
 train_csv = "/Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/train.csv"
@@ -133,17 +135,33 @@ x_train, y_train = smote.fit_resample(x_train, y_train)
 logging.info(f"After SMOTE, train set size: {len(x_train)}")
 print(f"After SMOTE, train set size: {len(x_train)}", flush=True)
 
-# Train Naive Bayes model
-print("Training Naive Bayes model...", flush=True)
-model = GaussianNB()
-model.fit(x_train, y_train)
-print("Naive Bayes model training completed.", flush=True)
+# Define and run GridSearchCV with Pipeline
+print("Performing Grid Search for Naive Bayes...", flush=True)
+pipeline = Pipeline([
+    ('nb', GaussianNB())
+])
+param_grid = {
+    'nb__var_smoothing': [1e-11, 1e-9, 1e-7]
+}
+grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='f1', n_jobs=-1)
+grid_search.fit(x_train, y_train)
+print("Best parameters:", grid_search.best_params_)
+print("Best F1-score:", grid_search.best_score_)
+best_model = grid_search.best_estimator_
+print("Grid Search completed.", flush=True)
+
+
+# # Train Naive Bayes model
+# print("Training Naive Bayes model...", flush=True)
+# model = GaussianNB()
+# model.fit(x_train, y_train)
+# print("Naive Bayes model training completed.", flush=True)
 
 # Predict with progress bar and threshold optimization
 print("Predicting probabilities on test set...", flush=True)
 y_pred_proba = []
 for i in tqdm(range(len(x_test)), desc="Predicting Probabilities", dynamic_ncols=True, mininterval=0.1):
-    proba = model.predict_proba(x_test[i:i+1])[0, 1]
+    proba = best_model.predict_proba(x_test[i:i+1])[0, 1]
     y_pred_proba.append(proba)
 y_pred_proba = np.array(y_pred_proba)
 print("Probability prediction completed.", flush=True)
@@ -262,7 +280,7 @@ def save_scatter_plot(x, y, language, plots_dir):
     print(f"Scatter plot saved at: {plot_path}", flush=True)
 
 # Generate visualizations
-save_decision_boundary_plot(x_train, y_train, model, selected_lang, best_threshold, plots_dir)
+save_decision_boundary_plot(x_train, y_train, best_model, selected_lang, best_threshold, plots_dir)
 save_scatter_plot(x_test, y_test, selected_lang, plots_dir)
 
 logging.info("Script finished.")
