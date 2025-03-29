@@ -120,7 +120,7 @@ print("Feature scaling completed.", flush=True)
 
 # Reduce dimensionality with PCA
 print("Applying PCA to reduce dimensionality...", flush=True)
-pca = PCA(n_components=100)  # Increase to 200 for better feature retention
+pca = PCA(n_components=100)
 x_train = pca.fit_transform(x_train)
 x_test = pca.transform(x_test)
 print("PCA completed.", flush=True)
@@ -138,12 +138,6 @@ print("Training Naive Bayes model...", flush=True)
 model = GaussianNB()
 model.fit(x_train, y_train)
 print("Naive Bayes model training completed.", flush=True)
-
-# # Cross-validation
-# print("Performing cross-validation...", flush=True)
-# scores = cross_val_score(model, x_train, y_train, cv=5, scoring='f1_macro')
-# print(f"Cross-validation F1-macro scores: {scores}", flush=True)
-# print(f"Average F1-macro: {np.mean(scores):.2f} (+/- {np.std(scores) * 2:.2f})", flush=True)
 
 # Predict with progress bar and threshold optimization
 print("Predicting probabilities on test set...", flush=True)
@@ -178,7 +172,7 @@ pr_curve_path = os.path.join(script_dir, "plots/NaiveBayes", f"{selected_lang}_p
 os.makedirs(os.path.dirname(pr_curve_path), exist_ok=True)
 plt.savefig(pr_curve_path)
 # plt.show()
-plt.close()  # Close figure to free memory
+plt.close()  
 print(f"Precision-Recall curve saved at: {pr_curve_path}", flush=True)
 
 # Use the best threshold
@@ -202,7 +196,7 @@ plt.title(f"Confusion Matrix for {selected_lang} (Naive Bayes + HOG)")
 cm_path = os.path.join(script_dir, "plots/NaiveBayes", f"{selected_lang}_confusion_matrix_{timestamp}.png")
 plt.savefig(cm_path)
 # plt.show()
-plt.close()  # Close figure to free memory
+plt.close()  
 print(f"Confusion matrix saved at: {cm_path}", flush=True)
 
 # Visualization
@@ -212,7 +206,7 @@ os.makedirs(plots_dir, exist_ok=True)
 def save_decision_boundary_plot(x, y, model, language, best_threshold, plots_dir):
     print("Generating decision boundary plot...", flush=True)
     # Subsample both x and y consistently
-    sample_size = min(5000, len(x))  # Use min to avoid index errors if dataset is smaller
+    sample_size = min(5000, len(x))  
     x_sampled = x[:sample_size]
     y_sampled = y[:sample_size]
     
@@ -240,13 +234,13 @@ def save_decision_boundary_plot(x, y, model, language, best_threshold, plots_dir
     filename = f"{language}_naive_bayes_hog_decision_boundary_{timestamp}.png"
     plot_path = os.path.join(plots_dir, filename)
     plt.savefig(plot_path)
-    plt.close()  # Close figure to free memory
+    plt.close()  
     print(f"Decision boundary plot saved at: {plot_path}", flush=True)
 
 def save_scatter_plot(x, y, language, plots_dir):
     print("Generating scatter plot...", flush=True)
     # Subsample both x and y consistently
-    sample_size = min(5000, len(x))  # Use min to avoid index errors if dataset is smaller
+    sample_size = min(5000, len(x))  
     x_sampled = x[:sample_size]
     y_sampled = y[:sample_size]
     
@@ -264,7 +258,7 @@ def save_scatter_plot(x, y, language, plots_dir):
     filename = f"{language}_scatter_plot_{timestamp}.png"
     plot_path = os.path.join(plots_dir, filename)
     plt.savefig(plot_path)
-    plt.close()  # Close figure to free memory
+    plt.close()  
     print(f"Scatter plot saved at: {plot_path}", flush=True)
 
 # Generate visualizations
