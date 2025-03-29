@@ -138,19 +138,47 @@ logging.info(f"After SMOTE, train set size: {len(x_train)}")
 print(f"After SMOTE, train set size: {len(x_train)}", flush=True)
 
 # Train KNN model with best k
-best_k=3
-print(f"Training KNN with best k={best_k}...", flush=True)
-model = KNeighborsClassifier(n_neighbors=best_k, weights='distance', n_jobs=-1)
-model.fit(x_train, y_train)
-print("KNN model training completed.", flush=True)
+# best_k=3
+# print(f"Training KNN with best k={best_k}...", flush=True)
+# model = KNeighborsClassifier(n_neighbors=best_k, weights='distance', n_jobs=-1)
+# model.fit(x_train, y_train)
+# print("KNN model training completed.", flush=True)
 
-# Evaluate with adjusted threshold
-print("Predicting probabilities on test set...", flush=True)
-y_pred_proba = model.predict_proba(x_test)[:, 1]
-print("Probability prediction completed.", flush=True)
+# # Evaluate with adjusted threshold
+# print("Predicting probabilities on test set...", flush=True)
+# y_pred_proba = model.predict_proba(x_test)[:, 1]
+# print("Probability prediction completed.", flush=True)
 
-threshold = 0.7  # Adjust threshold to reduce false positives for Class 1
-y_pred = (y_pred_proba >= threshold).astype(int)
+# threshold = 0.7  # Adjust threshold to reduce false positives for Class 1
+# y_pred = (y_pred_proba >= threshold).astype(int)
+
+print("Performing Grid Search for KNN hyperparameters...", flush=True)
+pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('pca', PCA(n_components=100)),
+    ('smote', SMOTE(random_state=42)),
+    ('knn', KNeighborsClassifier(n_jobs=-1))
+])
+
+param_grid = {
+    'knn__n_neighbors': [3, 5, 7, 9],
+    'knn__weights': ['uniform', 'distance'],
+    'knn__metric': ['euclidean', 'manhattan']
+}
+
+grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='f1', n_jobs=-1)
+grid_search.fit(x_train, y_train)
+best_model = grid_search.best_estimator_
+print("Best parameters:", grid_search.best_params_)
+print("Grid Search completed.", flush=True)
+
+# Predict with the best model
+y_pred_proba = best_model.predict_proba(x_test)[:, 1]
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred_proba)
+f1_scores = 2 * (precision * recall) / (precision + recall + 1e-10)
+best_threshold_idx = np.argmax(f1_scores)
+best_threshold = thresholds[best_threshold_idx]
+y_pred = (y_pred_proba >= best_threshold).astype(int)
 
 accuracy = accuracy_score(y_test, y_pred)
 logging.info(f"Model Accuracy: {accuracy * 100:.2f}%")
