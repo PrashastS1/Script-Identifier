@@ -655,16 +655,16 @@ print(f"After SMOTE, train set size: {len(x_train)}", flush=True)
 
 # Tune KNN hyperparameters
 print("Tuning KNN hyperparameters...", flush=True)
-# best_k = 5
-# best_score = 0
-# for k in [3, 5, 7, 9, 11]:
-#     model = KNeighborsClassifier(n_neighbors=k, weights='distance', n_jobs=-1)
-#     scores = cross_val_score(model, x_train, y_train, cv=5, scoring='f1_macro')
-#     mean_score = np.mean(scores)
-#     print(f"k={k}, F1-macro: {mean_score:.2f}", flush=True)
-#     if mean_score > best_score:
-#         best_score = mean_score
-#         best_k = k
+best_k = 5
+best_score = 0
+for k in [3, 5, 7, 9, 11]:
+    model = KNeighborsClassifier(n_neighbors=k, weights='distance', n_jobs=-1)
+    scores = cross_val_score(model, x_train, y_train, cv=5, scoring='f1_macro')
+    mean_score = np.mean(scores)
+    print(f"k={k}, F1-macro: {mean_score:.2f}", flush=True)
+    if mean_score > best_score:
+        best_score = mean_score
+        best_k = k
 
 # Train KNN model with best k
 best_k=3
@@ -673,11 +673,11 @@ model = KNeighborsClassifier(n_neighbors=best_k, weights='distance', n_jobs=-1)
 model.fit(x_train, y_train)
 print("KNN model training completed.", flush=True)
 
-# Cross-validation
-# print("Performing cross-validation...", flush=True)
-# scores = cross_val_score(model, x_train, y_train, cv=5, scoring='f1_macro')
-# print(f"Cross-validation F1-macro scores: {scores}", flush=True)
-# print(f"Average F1-macro: {np.mean(scores):.2f} (+/- {np.std(scores) * 2:.2f})", flush=True)
+Cross-validation
+print("Performing cross-validation...", flush=True)
+scores = cross_val_score(model, x_train, y_train, cv=5, scoring='f1_macro')
+print(f"Cross-validation F1-macro scores: {scores}", flush=True)
+print(f"Average F1-macro: {np.mean(scores):.2f} (+/- {np.std(scores) * 2:.2f})", flush=True)
 
 # Evaluate with adjusted threshold
 print("Predicting probabilities on test set...", flush=True)
