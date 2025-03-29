@@ -174,7 +174,7 @@ plt.title(f"Precision-Recall vs. Threshold for {selected_lang}")
 plt.legend()
 plt.grid(True)
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-pr_curve_path = os.path.join(script_dir, "plots", f"{selected_lang}_pr_curve_{timestamp}.png")
+pr_curve_path = os.path.join(script_dir, "plots/NaiveBayes", f"{selected_lang}_pr_curve_{timestamp}.png")
 os.makedirs(os.path.dirname(pr_curve_path), exist_ok=True)
 plt.savefig(pr_curve_path)
 # plt.show()
@@ -199,14 +199,14 @@ disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Not " + sele
 plt.figure(figsize=(8, 6))
 disp.plot(cmap=plt.cm.Blues)
 plt.title(f"Confusion Matrix for {selected_lang} (Naive Bayes + HOG)")
-cm_path = os.path.join(script_dir, "plots", f"{selected_lang}_confusion_matrix_{timestamp}.png")
+cm_path = os.path.join(script_dir, "plots/NaiveBayes", f"{selected_lang}_confusion_matrix_{timestamp}.png")
 plt.savefig(cm_path)
 # plt.show()
 plt.close()  # Close figure to free memory
 print(f"Confusion matrix saved at: {cm_path}", flush=True)
 
 # Visualization
-plots_dir = os.path.join(script_dir, "plots")
+plots_dir = os.path.join(script_dir, "plots/NaiveBayes")
 os.makedirs(plots_dir, exist_ok=True)
 
 def save_decision_boundary_plot(x, y, model, language, best_threshold, plots_dir):
