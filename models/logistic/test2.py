@@ -5,15 +5,15 @@ import pandas as pd
 import logging
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from concurrent.futures import ThreadPoolExecutor
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.decomposition import PCA
 from tensorflow.keras.applications import VGG16
 from tensorflow.keras.applications.vgg16 import preprocess_input
-from tensorflow.keras.preprocessing import image
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Model
+import zipfile
 
 # ========================== STEP 1: SETUP FILE PATHS ==========================
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,71 +39,64 @@ def select_lang():
 logging.basicConfig(filename=logger, level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", filemode="a")
 logging.info("Script started.")
 
-# ========================== STEP 3: LOAD PRETRAINED CNN MODEL ==========================
+# ========================== STEP 3: EXTRACT DATASET IF NOT EXIST ==========================
+zip_path = os.path.join(script_dir, "../../recognition.zip")
+if not os.path.exists(data_path):  # Check if already extracted
+    print("Extracting recognition.zip...")
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall(os.path.join(script_dir, "../../"))
+    print("Extraction completed!")
+
+# ========================== STEP 4: LOAD PRETRAINED CNN MODEL ==========================
 base_model = VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 model = Model(inputs=base_model.input, outputs=base_model.output)
 
-def extract_cnn_features(image_path):
-    """Extract CNN features from an image using VGG16."""
-    if not os.path.exists(image_path):
-        logging.warning(f"Missing image: {image_path}, skipping...")
-        return np.zeros((7 * 7 * 512,))  # Return dummy features to maintain shape
-
-    img = image.load_img(image_path, target_size=(224, 224))
-    img = image.img_to_array(img)
-    img = np.expand_dims(img, axis=0)
-    img = preprocess_input(img)
-    features = model.predict(img)
-    return features.flatten()
-
-# ========================== STEP 4: LOAD DATASET WITH SINGLE PROGRESS BAR ==========================
-def load_dataset(csv_path, selected_lang):
+# ========================== STEP 5: BATCH PROCESSING FUNCTION ==========================
+def extract_cnn_features_batch(csv_path, selected_lang, batch_size=32):
     df = pd.read_csv(csv_path, skiprows=1, header=None, names=["image_path", "annotation", "script"])
     
-    # Convert paths
+    # Fix image paths
     df["image_path"] = df["image_path"].apply(lambda x: os.path.join(data_path, x.replace("\\", "/")))
     
-    # Assign labels
+    # Filter data for the selected language (Binary Classification)
     df["label"] = df["image_path"].apply(lambda x: 1 if os.path.basename(os.path.dirname(x)).lower() == selected_lang else 0)
 
-    # Use ThreadPoolExecutor to speed up feature extraction
-    features, labels = [], []
-    
-    with ThreadPoolExecutor() as executor:
-        futures = []
-        for _, row in df.iterrows():
-            futures.append(executor.submit(extract_cnn_features, row["image_path"]))
-        
-        for future in tqdm(futures, desc="Extracting Features", total=len(futures)):
-            features.append(future.result())
+    # Data Generator for Batch Processing
+    datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
+    generator = datagen.flow_from_dataframe(
+        dataframe=df,
+        x_col="image_path",
+        y_col="label",
+        target_size=(224, 224),
+        batch_size=batch_size,
+        class_mode="raw",  # Since it's binary classification
+        shuffle=False
+    )
 
-    features = np.array(features)
-    labels = df["label"].values
+    # Extract CNN features in batches
+    features = model.predict(generator, verbose=1)
+    features = features.reshape(features.shape[0], -1)  # Flatten
 
-    if len(np.unique(labels)) < 2:
-        logging.error(f"Only one class found: {np.unique(labels)}. Check dataset.")
-        print(f"Error: Only one class found ({np.unique(labels)}). Adjust dataset!")
-        exit()
+    return features, np.array(df["label"])
 
-    return features, labels
-
-# ========================== STEP 5: SELECT LANGUAGE AND LOAD DATA ==========================
+# ========================== STEP 6: SELECT LANGUAGE AND LOAD DATA ==========================
 selected_lang = select_lang()
 if not selected_lang:
     print("Invalid choice. Exiting program.")
     exit()
 
-x_train, y_train = load_dataset(train_csv, selected_lang)
-x_test, y_test = load_dataset(test_csv, selected_lang)
+# Extract features in batches
+x_train, y_train = extract_cnn_features_batch(train_csv, selected_lang)
+x_test, y_test = extract_cnn_features_batch(test_csv, selected_lang)
 
 logging.info(f"Train set size: {len(x_train)}, Test set size: {len(x_test)}")
 
-# ========================== STEP 6: PREPROCESS DATA ==========================
+# ========================== STEP 7: PREPROCESS DATA ==========================
 scaler = StandardScaler()
 x_train = scaler.fit_transform(x_train)
 x_test = scaler.transform(x_test)
 
-# ========================== STEP 7: TRAIN LOGISTIC REGRESSION ==========================
+# ========================== STEP 8: TRAIN LOGISTIC REGRESSION ==========================
 model = LogisticRegression(solver='liblinear', class_weight='balanced')
 model.fit(x_train, y_train)
 
@@ -117,7 +110,7 @@ print("Classification Report:\n", classification_report(y_test, y_pred))
 
 logging.info("Script finished.")
 
-# ========================== STEP 8: SAVE DECISION BOUNDARY PLOT ==========================
+# ========================== STEP 9: SAVE DECISION BOUNDARY PLOT ==========================
 plots_dir = os.path.join(script_dir, "plots")
 os.makedirs(plots_dir, exist_ok=True)
 
@@ -150,4 +143,3 @@ def save_plot(x, y, model, language):
     plt.show()
 
 save_plot(x_train, y_train, model, selected_lang)
-logging.info("=========================================")
