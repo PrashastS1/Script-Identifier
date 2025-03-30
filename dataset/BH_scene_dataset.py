@@ -80,14 +80,11 @@ class BHSceneDataset(Dataset):
             logger.info("No backbone specified")
         elif backbone == 'resnet50':
             self.backbone = RESNET_backbone(pretrained=True, gap_dim=gap_dim).to(self.device)
-            self.backbone = RESNET_backbone(pretrained=True, gap_dim=gap_dim).to(self.device)
             logger.info("Using ResNet50 backbone")
         elif backbone == 'vgg':
             self.backbone = VGG_backbone(pretrained=True, gap_dim=gap_dim).to(self.device)
-            self.backbone = VGG_backbone(pretrained=True, gap_dim=gap_dim).to(self.device)
             logger.info("Using VGG backbone")
         elif backbone == 'vit':
-            self.backbone = VIT_backbone(pretrained=True).to(self.device)
             self.backbone = VIT_backbone(pretrained=True).to(self.device)
             logger.info("Using VIT backbone")
         else:
