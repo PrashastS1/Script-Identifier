@@ -140,15 +140,16 @@ class LanguageRecognitionTransforms:
 
     @staticmethod
     def get_advanced_transforms(backbone_type: str, phase: str, img_size: int = 224):
-        """Includes MixUp/CutMix for transformer models (requires label)"""
-        base_transform = LanguageRecognitionTransforms.get_transforms(backbone_type, phase, img_size)
+        raise NotImplementedError("Advanced transforms not implemented yet.")
+        # """Includes MixUp/CutMix for transformer models (requires label)"""
+        # base_transform = LanguageRecognitionTransforms.get_transforms(backbone_type, phase, img_size)
         
-        if phase == 'train' and backbone_type in ['vit']:
-            return A.Compose([
-                base_transform,
-                A.OneOf([
-                    A.CutMix(num_classes=14, p=0.3),
-                    A.MixUp(num_classes=14, p=0.3)
-                ], p=0.4)
-            ])
-        return base_transform
+        # if phase == 'train' and backbone_type in ['vit']:
+        #     return A.Compose([
+        #         base_transform,
+        #         A.OneOf([
+        #             A.CutMix(num_classes=14, p=0.3),
+        #             A.MixUp(num_classes=14, p=0.3)
+        #         ], p=0.4)
+        #     ])
+        # return base_transform
