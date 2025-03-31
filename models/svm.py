@@ -5,6 +5,7 @@ from collections import Counter
 import torch
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score
 from loguru import logger
 from dataset.BH_scene_dataset import BHSceneDataset
 from torch.utils.data import DataLoader
@@ -106,6 +107,72 @@ test_dataset = BHSceneDataset(
 )
 
 X_test, y_test = extract_features(test_dataset)
-
+y_pred= model.predict(X_test)
 test_acc = model.score(X_test, y_test)
+f1score = f1_score(y_test, y_pred, average='weighted')
+logger.info(f"F1 Score: {f1score:.2f}")
 logger.info(f"Test Accuracy: {test_acc:.2f}")
+
+results=[]
+
+#hyperparameter results 
+#use basic for loops 
+hyperparameters = config["training_params"]["hyperparameter_range"]
+
+#hyperparameter_range:     ## only run if run_experiments is True
+    # C: [0.1, 1, 10]
+    # kernel: ['linear', 'rbf','poly']
+    # gamma: ['scale', 'auto','0.1','1','10']
+    # batch_size: [64, 256]
+for C in hyperparameters["C"]:
+    for kernel in hyperparameters["kernel"]:
+        for gamma in hyperparameters["gamma"]:
+            # Create the SVM model for 14 classes
+            model = svm.SVC(
+                C=C, kernel=kernel, gamma=gamma, decision_function_shape="ovr"
+            )
+            # Train the model
+            train_acc, val_acc, model = train(X_train, y_train, config["training_params"]["default_params"])
+            # Evaluate the model
+            test_acc = model.score(X_test, y_test)
+            y_pred = model.predict(X_test)
+            f1score = f1_score(y_test, y_pred, average='weighted')
+            results.append({
+                "C": C,
+                "kernel": kernel,
+                "gamma": gamma,
+                "train_acc": train_acc,
+                "val_acc": val_acc,
+                "test_acc": test_acc,
+                "f1score": f1score
+            })
+
+
+#plots
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def plot_results(results):
+    """Plot the results of the experiments."""
+    # Convert results to DataFrame
+    import pandas as pd
+    df = pd.DataFrame(results)
+
+    # Plot train accuracy vs C
+    plt.figure(figsize=(10, 6))
+    sns.lineplot(data=df, x="C", y="train_acc", hue="kernel", style="gamma")
+    plt.title("Train Accuracy vs C")
+    plt.xlabel("C")
+    plt.ylabel("Train Accuracy")
+    plt.legend()
+    plt.show()
+
+    # Plot validation accuracy vs C
+    plt.figure(figsize=(10, 6))
+    sns.lineplot(data=df, x="C", y="val_acc", hue="kernel", style="gamma")
+    plt.title("Validation Accuracy vs C")
+    plt.xlabel("C")
+    plt.ylabel("Validation Accuracy")
+    plt.legend()
+    plt.show()
