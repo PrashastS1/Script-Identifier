@@ -86,12 +86,22 @@ resnet_features = extract_features(resnet_model, image_paths)
 vgg_features = extract_features(vgg_model, image_paths)
 vit_features = extract_features(vit_model, image_paths)
 
-# Dimensionality reduction
-resnet_embedded = reduce_dimensions(resnet_features, method='tsne')
-vgg_embedded = reduce_dimensions(vgg_features, method='tsne')
-vit_embedded = reduce_dimensions(vit_features, method='tsne')
+# Dimensionality reduction using TSNE
+resnet_embedded_tsne = reduce_dimensions(resnet_features, method='tsne')
+vgg_embedded_tsne = reduce_dimensions(vgg_features, method='tsne')
+vit_embedded_tsne = reduce_dimensions(vit_features, method='tsne')
+
+# Dimensionality reduction using PCA
+resnet_embedded_pca = reduce_dimensions(resnet_features, method='pca')
+vgg_embedded_pca = reduce_dimensions(vgg_features, method='pca')
+vit_embedded_pca = reduce_dimensions(vit_features, method='pca')
 
 # Plot results
-plot_clusters(resnet_embedded, labels, "TSNE Visualization of ResNet50 Features")
-plot_clusters(vgg_embedded, labels, "TSNE Visualization of VGG16 Features")
-plot_clusters(vit_embedded, labels, "TSNE Visualization of ViT Features")
+plot_clusters(resnet_embedded_tsne, labels, "TSNE Visualization of ResNet50 Features")
+plot_clusters(vgg_embedded_tsne, labels, "TSNE Visualization of VGG16 Features")
+plot_clusters(vit_embedded_tsne, labels, "TSNE Visualization of ViT Features")
+
+# Plot results
+plot_clusters(resnet_embedded_pca, labels, "PCA Visualization of ResNet50 Features")
+plot_clusters(vgg_embedded_pca, labels, "PCA Visualization of VGG16 Features")
+plot_clusters(vit_embedded_pca, labels, "PCA Visualization of ViT Features")
