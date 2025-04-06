@@ -10,6 +10,7 @@ from models.backbones.resnet50 import RESNET_backbone
 from models.backbones.vgg import VGG_backbone
 from models.backbones.vit import VIT_backbone
 from .transformations import LanguageRecognitionTransforms
+from tqdm import tqdm
 import json
 
 
@@ -125,6 +126,8 @@ class BHSceneDataset(Dataset):
         return len(self.csv)
 
     def __getitem__(self, index: int) -> Dict[str, Any]:
+
+        row = self.csv.iloc[index]
         
         ## latent dir
         latent_image_dir = os.path.join(
@@ -147,8 +150,6 @@ class BHSceneDataset(Dataset):
         if os.path.exists(latent_image_path):
             latent = np.load(latent_image_path)
             return torch.tensor(latent).float().to(self.device), row['Language_id']
-
-        row = self.csv.iloc[index]
         
         img_path = os.path.join(self.root_dir, row['Filepath'])
         image = cv2.imread(img_path)
@@ -237,3 +238,6 @@ if __name__ == "__main__":
     for i in range(1):
         img, lang = dataset[i]
         print(f"Image shape: {img.shape}, Language: {lang}")
+
+    # for i in tqdm(range(len(dataset)), desc="Processing dataset", unit="sample"):
+    #     img, lang = dataset[i]
