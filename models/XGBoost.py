@@ -98,9 +98,9 @@ if __name__ == '__main__':
         'n_estimators': [50, 100, 150],
         'max_depth': [5, 10, 15],
         'learning_rate': [0.01, 0.1, 0.3],  # Add learning rate
-        'backbone': ['resnet50', 'vgg16'],
+        'backbone': ['resnet50'],
         'gap_dim_resnet': [1, 3, 5, 7],
-        'gap_dim_vgg': [1, 4, 7, 10, 13]
+        # 'gap_dim_vgg': [1, 4, 7, 10, 13]
     }
 
     best_acc = 0
@@ -118,12 +118,12 @@ if __name__ == '__main__':
             # Load data
             torch.cuda.empty_cache()
             
-            train_dataset = BHSceneDataset(root_dir="data/recognition", train_split=True, transform=None,
+            train_dataset = BHSceneDataset(root_dir="data/recognition", train_split=True,
                                         linear_transform=True, backbone=backbone, gap_dim=gap_dim)
             X_train, y_train = extract_features(train_dataset)
             dtrain = xgb.DMatrix(X_train, label=y_train)
 
-            test_dataset = BHSceneDataset(root_dir="data/recognition", train_split=False, transform=None,
+            test_dataset = BHSceneDataset(root_dir="data/recognition", train_split=False,
                                         linear_transform=True, backbone=backbone, gap_dim=gap_dim)
             X_test, y_test = extract_features(test_dataset)
             dtest = xgb.DMatrix(X_test)

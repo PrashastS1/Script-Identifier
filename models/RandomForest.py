@@ -79,7 +79,7 @@ if __name__ == '__main__':
         'n_estimators': [50, 100, 150],
         'max_depth': [5, 10, 15],
         'criterion': ['gini', 'entropy'],  
-        'backbone': ['resnet50', 'vgg16'],
+        'backbone': ['vgg'],
         'gap_dim_resnet': [1, 3, 5, 7],
         'gap_dim_vgg': [1, 4, 7, 10, 13]
     }
@@ -99,12 +99,12 @@ if __name__ == '__main__':
             torch.cuda.empty_cache()
 
             # Load data
-            train_dataset = BHSceneDataset(root_dir="data/recognition", train_split=True, transform=None,
-                                        linear_transform=True, backbone=backbone, gap_dim=gap_dim)
+            train_dataset = BHSceneDataset(root_dir="data/recognition", train_split=True,
+                                        linear_transform=True, backbone=backbone, gap_dim=gap_dim) 
             X_train, y_train = extract_features(train_dataset)
 
-            test_dataset = BHSceneDataset(root_dir="data/recognition", train_split=False, transform=None,
-                                        linear_transform=True, backbone=backbone, gap_dim=gap_dim)
+            test_dataset = BHSceneDataset(root_dir="data/recognition", train_split=False,
+                                        linear_transform=True, backbone=backbone, gap_dim=gap_dim)  
             X_test, y_test = extract_features(test_dataset)
 
             # Iterate over all parameter combinations
@@ -139,20 +139,20 @@ if __name__ == '__main__':
     plt.title('RF Accuracy vs. Number of Estimators')
     plt.xlabel('Number of Estimators')
     plt.ylabel('Accuracy')
-    plt.savefig(os.path.join(plots_dir, "rf_accuracy_vs_n_estimators.png"))
+    plt.savefig(os.path.join(plots_dir, "vgg_rf_accuracy_vs_n_estimators.png"))
     plt.show()
 
     plt.figure(figsize=(10, 6))
     sns.barplot(x='backbone', y='accuracy', hue='gap_dim', data=results_df)
     plt.title('RF Accuracy by Backbone and GAP Dimension')
-    plt.savefig(os.path.join(plots_dir, "rf_accuracy_by_backbone_gapdim.png"))
+    plt.savefig(os.path.join(plots_dir, "vgg_rf_accuracy_by_backbone_gapdim.png"))
     plt.show()
 
     plt.figure(figsize=(12, 6))
     sns.catplot(x='max_depth', y='accuracy', col='backbone', hue='gap_dim', kind='bar', data=results_df, height=5,
                 aspect=0.8)
     plt.suptitle('RF Accuracy by Max Depth, Backbone, and GAP Dimension', y=1.02)
-    plt.savefig(os.path.join(plots_dir, "rf_accuracy_by_maxdepth_backbone_gapdim.png"))
+    plt.savefig(os.path.join(plots_dir, "vgg_rf_accuracy_by_maxdepth_backbone_gapdim.png"))
     plt.show()
 
 
@@ -160,12 +160,48 @@ if __name__ == '__main__':
     plt.figure(figsize=(12, 8))
     sns.heatmap(heatmap_data, annot=True, fmt=".4f", cmap="YlGnBu")
     plt.title('RF Accuracy Heatmap')
-    plt.savefig(os.path.join(plots_dir, "rf_accuracy_heatmap.png"))
+    plt.savefig(os.path.join(plots_dir, "vgg_rf_accuracy_heatmap.png"))
     plt.show()
 
     plt.figure(figsize=(8, 6))
     sns.boxplot(x='criterion', y='accuracy', data=results_df)
     plt.title('RF Accuracy by Impurity Criterion')
-    plt.savefig(os.path.join(plots_dir, "rf_accuracy_by_criterion.png"))
+    plt.savefig(os.path.join(plots_dir, "vgg_rf_accuracy_by_criterion.png"))
     plt.show()
+
+    # plt.figure(figsize=(10, 6))
+    # sns.lineplot(x='n_estimators', y='accuracy', hue='backbone', style='criterion', data=results_df)
+    # plt.title('RF Accuracy vs. Number of Estimators')
+    # plt.xlabel('Number of Estimators')
+    # plt.ylabel('Accuracy')
+    # plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_vs_n_estimators.png"))
+    # plt.show()
+
+    # plt.figure(figsize=(10, 6))
+    # sns.barplot(x='backbone', y='accuracy', hue='criterion', data=results_df)
+    # plt.title('RF Accuracy by Backbone and Criterion')
+    # plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_by_backbone_criterion.png"))
+    # plt.show()
+
+    # plt.figure(figsize=(12, 6))
+    # sns.catplot(x='max_depth', y='accuracy', col='backbone', hue='criterion', 
+    #             kind='bar', data=results_df, height=5, aspect=0.8)
+    # plt.suptitle('RF Accuracy by Max Depth, Backbone, and Criterion', y=1.02)
+    # plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_by_maxdepth_backbone_criterion.png"))
+    # plt.show()
+
+    # heatmap_data = results_df.pivot_table(index='n_estimators', 
+    #                                     columns=['backbone', 'max_depth'], 
+    #                                     values='accuracy')
+    # plt.figure(figsize=(12, 8))
+    # sns.heatmap(heatmap_data, annot=True, fmt=".4f", cmap="YlGnBu")
+    # plt.title('RF Accuracy Heatmap (by n_estimators, backbone, and max_depth)')
+    # plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_heatmap.png"))
+    # plt.show()
+
+    # plt.figure(figsize=(8, 6))
+    # sns.boxplot(x='criterion', y='accuracy', data=results_df)
+    # plt.title('RF Accuracy by Impurity Criterion')
+    # plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_by_criterion.png"))
+    # plt.show()
 
