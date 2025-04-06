@@ -46,6 +46,18 @@ class BHSceneDataset(Dataset):
         self.backbone = backbone
         self.gap_dim = gap_dim
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.latent_dir = os.path.join(
+            "data",
+            f"latent_{backbone}_{'data_augmentation' if transformation else 'no_data_augmentation'}_{'linear_transform' if linear_transform else 'no_linear_transform'}_{gap_dim}",
+            "train" if train_split else "test"
+        )
+
+        if not os.path.exists(self.latent_dir):
+            os.makedirs(self.latent_dir)
+            logger.info(f"latent_dir not present")
+            logger.info(f"Created directory {self.latent_dir}")
+        else:
+            logger.info(f"latent_dir already present at {self.latent_dir}")
 
         if not self.linear_transform:
             logger.warning("linear_transform is set to False")
@@ -96,7 +108,7 @@ class BHSceneDataset(Dataset):
         with open('./dataset/language_encode.json') as f:
             self.language_mapping = json.load(f)
 
-        self.csv['Language'] = self.csv['Language'].apply(lambda x : self.encode_language(x))
+        self.csv['Language_id'] = self.csv['Language'].apply(lambda x : self.encode_language(x))
         ## print unique language
         # print(self.csv['Language'].unique())
         logger.info(f"Loaded csv file from {self.csv_path}")
@@ -113,6 +125,28 @@ class BHSceneDataset(Dataset):
         return len(self.csv)
 
     def __getitem__(self, index: int) -> Dict[str, Any]:
+        
+        ## latent dir
+        latent_image_dir = os.path.join(
+            self.latent_dir,
+            row['Language']
+        )
+
+        if not os.path.exists(
+            latent_image_dir
+        ):
+            os.makedirs(latent_image_dir)
+            logger.info(f"Created directory {latent_image_dir}")
+
+        ## save latent features
+        latent_image_path = os.path.join(
+            latent_image_dir,
+            os.path.basename(row['Filepath']).split('.')[0] + '.npy'
+        )
+
+        if os.path.exists(latent_image_path):
+            latent = np.load(latent_image_path)
+            return torch.tensor(latent).float().to(self.device), row['Language_id']
 
         row = self.csv.iloc[index]
         
@@ -149,8 +183,11 @@ class BHSceneDataset(Dataset):
             if self.linear_transform:
                 # current dim - 1x3x224x224
                 image = image.reshape(-1)
-            
-        return image, row['Language']
+
+        ## save latent features at latent_image_path
+        np.save(latent_image_path, image.cpu().detach().numpy())
+    
+        return image, row['Language_id']
 
 
 def test_dataset():
