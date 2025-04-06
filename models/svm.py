@@ -176,3 +176,16 @@ def plot_results(results):
     plt.ylabel("Validation Accuracy")
     plt.legend()
     plt.show()
+
+
+plot_results(results)
+# Save the best model
+best_model = max(results, key=lambda x: x["test_acc"])
+best_model_params = {
+    "C": best_model["C"],
+    "kernel": best_model["kernel"],
+    "gamma": best_model["gamma"]
+}
+best_model_acc = best_model["test_acc"]
+logger.info(f"Best Model: {best_model_params}")
+logger.info(f"Best Model Accuracy: {best_model_acc:.2f}")
