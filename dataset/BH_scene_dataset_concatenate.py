@@ -197,6 +197,7 @@ if __name__ == "__main__":
     print(f"Concatenated image shape: {sample['image'].shape}")
     print(f"Label 1: {sample['label1']}, Label 2: {sample['label2']}")
     print(f"Is same language: {sample['is_same_language']}")
+    
     # To use with DataLoader:
     # from torch.utils.data import DataLoader
     # dataloader = DataLoader(dataset, batch_size=16, shuffle=True, num_workers=4)
