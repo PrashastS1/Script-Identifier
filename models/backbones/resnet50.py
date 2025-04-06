@@ -15,7 +15,7 @@ class RESNET_backbone(nn.Module):
         self.model = nn.Sequential(*list(model.children())[:-2])
         for param in self.model.parameters():
             param.requires_grad = False
-        logger.info("All VGG16 parameters are frozen.")
+        logger.info("All RESNET parameters are frozen.")
         if gap_dim > 7:
             raise ValueError("Global Average Pooling dimension should be less than 7")
         self.gap = nn.AdaptiveAvgPool2d((gap_dim, gap_dim))
