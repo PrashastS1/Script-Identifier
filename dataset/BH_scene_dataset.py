@@ -44,6 +44,7 @@ class BHSceneDataset(Dataset):
         self.root_dir = root_dir
         self.csv_path = os.path.join(self.root_dir, "train.csv" if train_split else "test.csv")
         self.linear_transform = linear_transform
+        self.backbone_name = backbone
         self.backbone = backbone
         self.gap_dim = gap_dim
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -100,9 +101,13 @@ class BHSceneDataset(Dataset):
         elif backbone == 'vit':
             self.backbone = VIT_backbone(pretrained=True).to(self.device)
             logger.info("Using VIT backbone")
+        elif backbone == "sift":
+            self.backbone = cv2.SIFT_create()
+            self.topk = 64
+            self.expected_dim = 128*self.topk
+            logger.info("Using SIFT backbone")
         else:
             raise ValueError(f"Invalid backbone: {backbone}, valid backbones are: resnet50, vgg, vit")
-            
         
         self.csv = pd.read_csv(self.csv_path, header=0, index_col=None)
 
@@ -121,6 +126,28 @@ class BHSceneDataset(Dataset):
             raise ValueError(f"Language {language} not in mapping")
         # if language is in the mapping, return the corresponding value
         return self.language_mapping[language]
+    
+    def apply_sift(self, image):
+        np_image = image.squeeze(0).permute(1, 2, 0).cpu()
+        ## print max and min element
+        # print(np_image.max(), np_image.min())
+        # np_image = (image * 255).astype(np.uint8)
+        np_image = np_image.numpy().astype(np.uint8)
+        # Convert to grayscale (OpenCV expects HxWxC)
+        gray = cv2.cvtColor(np_image, cv2.COLOR_RGB2GRAY)
+        keypoints, descriptors = self.backbone.detectAndCompute(gray, None)
+        sorted_indices = np.argsort([-kp.response for kp in keypoints])
+        # Select max (len(keypoints), self.topk) indices
+        # logger.info(f"total extracted keypoints - {len(sorted_indices)}")
+        top_indices = sorted_indices[:self.topk]
+        # Select corresponding descriptors
+        selected_descriptors = descriptors[top_indices]
+        # Flatten the descriptors and return
+        selected_descriptors = selected_descriptors.flatten()
+        ## if dim < expected_dim, pad with zeros
+        if selected_descriptors.shape[0] < self.expected_dim:
+            selected_descriptors = np.pad(selected_descriptors, (0, self.expected_dim - selected_descriptors.shape[0]), 'constant')
+        return selected_descriptors
 
     def __len__(self) -> int:
         return len(self.csv)
@@ -178,15 +205,19 @@ class BHSceneDataset(Dataset):
         ## for transformations, image is already in the required format
         if self.backbone is not None:
             assert image.shape == (1, 3, 224, 224), f"Image shape is {image.shape}"
-            image = self.backbone(image)
-            image = image.squeeze(0)
+            if self.backbone_name == 'sift':
+                image = self.apply_sift(image)
+                image = torch.tensor(image).float().to(self.device)
+            else:
+                image = self.backbone(image)
+                image = image.squeeze(0)
         else:
             if self.linear_transform:
                 # current dim - 1x3x224x224
                 image = image.reshape(-1)
 
         ## save latent features at latent_image_path
-        np.save(latent_image_path, image.cpu().detach().numpy())
+        # np.save(latent_image_path, image.cpu().detach().numpy())
     
         return image, row['Language_id']
 
@@ -229,13 +260,13 @@ if __name__ == "__main__":
     dataset = BHSceneDataset(
         root_dir="data/recognition",
         train_split=False,
-        transformation=True,
+        transformation=False,
         linear_transform=False,
-        backbone='resnet50',
+        backbone='sift',
         gap_dim=1
     )
 
-    for i in range(1):
+    for i in range(100):
         img, lang = dataset[i]
         print(f"Image shape: {img.shape}, Language: {lang}")
 
