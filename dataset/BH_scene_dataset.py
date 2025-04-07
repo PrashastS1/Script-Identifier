@@ -5,6 +5,7 @@ import os
 import cv2
 import numpy as np
 from loguru import logger
+from skimage.feature import hog
 from typing import Dict, Any
 from models.backbones.resnet50 import RESNET_backbone
 from models.backbones.vgg import VGG_backbone
@@ -105,7 +106,9 @@ class BHSceneDataset(Dataset):
             self.backbone = cv2.SIFT_create()
             self.topk = 64
             self.expected_dim = 128*self.topk
-            logger.info("Using SIFT backbone")
+            logger.info("Using SIFT for feature extraction")
+        elif backbone == "hog":
+            logger.info(f"Using HOG for feature extraction")
         else:
             raise ValueError(f"Invalid backbone: {backbone}, valid backbones are: resnet50, vgg, vit")
         
@@ -148,6 +151,26 @@ class BHSceneDataset(Dataset):
         if selected_descriptors.shape[0] < self.expected_dim:
             selected_descriptors = np.pad(selected_descriptors, (0, self.expected_dim - selected_descriptors.shape[0]), 'constant')
         return selected_descriptors
+    
+    def apply_hog(self, image):
+        np_image = image.squeeze(0).permute(1, 2, 0).cpu()
+        ## print max and min element
+        # print(np_image.max(), np_image.min())
+        # np_image = (image * 255).astype(np.uint8)
+        np_image = np_image.numpy().astype(np.uint8)
+        # Convert to grayscale (OpenCV expects HxWxC)
+        gray = cv2.cvtColor(np_image, cv2.COLOR_RGB2GRAY)
+        features = hog(
+            gray,
+            orientations = 9,
+            pixels_per_cell = (8, 8),
+            cells_per_block = (2, 2),
+            block_norm='L2-Hys',
+            transform_sqrt=True,
+            feature_vector=True
+        )
+        return features
+
 
     def __len__(self) -> int:
         return len(self.csv)
@@ -208,6 +231,9 @@ class BHSceneDataset(Dataset):
             if self.backbone_name == 'sift':
                 image = self.apply_sift(image)
                 image = torch.tensor(image).float().to(self.device)
+            elif self.backbone_name == 'hog':
+                image = self.apply_hog(image)
+                image = torch.tensor(image).float().to(self.device)
             else:
                 image = self.backbone(image)
                 image = image.squeeze(0)
@@ -217,7 +243,7 @@ class BHSceneDataset(Dataset):
                 image = image.reshape(-1)
 
         ## save latent features at latent_image_path
-        # np.save(latent_image_path, image.cpu().detach().numpy())
+        np.save(latent_image_path, image.cpu().detach().numpy())
     
         return image, row['Language_id']
 
@@ -262,11 +288,11 @@ if __name__ == "__main__":
         train_split=False,
         transformation=False,
         linear_transform=False,
-        backbone='sift',
+        backbone='hog',
         gap_dim=1
     )
 
-    for i in range(100):
+    for i in range(10):
         img, lang = dataset[i]
         print(f"Image shape: {img.shape}, Language: {lang}")
 
