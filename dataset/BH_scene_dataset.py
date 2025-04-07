@@ -21,7 +21,6 @@ class BHSceneDataset(Dataset):
             root_dir: str = "data/recognition", 
             train_split: bool = True, 
             transformation: bool = True,
-            linear_transform: bool = False,
             backbone: str = None,
             gap_dim: int = 1
         ) -> None:
@@ -30,8 +29,8 @@ class BHSceneDataset(Dataset):
         Args:
         - root_dir: str, path to the root directory of the dataset
         - train_split: bool, whether to use train split or test split
-        - Transformation: bool, whether to use albumentations for transformations
-        - linear_transform: bool, whether to linearize the image before passing to the backbone
+        - Transformation: bool, whether to use albumentations for data augmentation
+        #removed (not needed)  - linear_transform: bool, whether to linearize the image before passing to the backbone
         - backbone: str, backbone to be used for feature extraction ## resnet50, vgg, vit
         ###### swin, beit in progress
         - gap_dim: int, dimension of the global average pooled features
@@ -44,14 +43,14 @@ class BHSceneDataset(Dataset):
         super(BHSceneDataset, self).__init__()
         self.root_dir = root_dir
         self.csv_path = os.path.join(self.root_dir, "train.csv" if train_split else "test.csv")
-        self.linear_transform = linear_transform
+        self.linear_transform = True
         self.backbone_name = backbone
         self.backbone = backbone
         self.gap_dim = gap_dim
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.latent_dir = os.path.join(
             "data",
-            f"latent_{backbone}_{'data_augmentation' if transformation else 'no_data_augmentation'}_{'linear_transform' if linear_transform else 'no_linear_transform'}_{gap_dim}",
+            f"latent_{backbone}_{'data_augmentation' if transformation else 'no_data_augmentation'}_{gap_dim}",
             "train" if train_split else "test"
         )
 
@@ -286,9 +285,8 @@ if __name__ == "__main__":
     dataset = BHSceneDataset(
         root_dir="data/recognition",
         train_split=False,
-        transformation=False,
-        linear_transform=False,
-        backbone='hog',
+        transformation=True,
+        backbone='sift',
         gap_dim=1
     )
 
