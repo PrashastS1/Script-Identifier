@@ -2,21 +2,19 @@ train_dataset:
   root_dir: "data/recognition"
   train_split: True 
   transformation: True
-  linear_transform: True
-  backbone: resnet50
+  backbone: vit
   gap_dim:  7
 
 test_dataset:
   root_dir: "data/recognition"
   train_split: False
   transformation: True
-  linear_transform: True
-  backbone: resnet50
+  backbone: vit
   gap_dim:  7
 
 training_params:
   save_plots: True       ## null or True - save plots and results
-  exp_name: "ann_try2"   ## string - name of the experiment , dir - plots/ann/<exp_name>
+  exp_name: "ann_vit_da"   ## string - name of the experiment , dir - plots/ann/<exp_name>
   run_experiments: True  ## False or True - run experiments for hyperparameter tuning
   hyperparameter_range:     ## only run if run_experiments is True
     learning_rate: [0.0003, 0.00005, 0.0001]
@@ -24,7 +22,6 @@ training_params:
   default_param:        ## default parameters for training
     learning_rate: 0.001
     batch_size: 64
-    num_epochs: 5
+    num_epochs: 10
     model:
-      num_feature: 100352
-      num_class: 14
+      layers: [768, 512, 14]

@@ -2,14 +2,18 @@ from torch.utils.data import Dataset
 import torch
 import pandas as pd
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import cv2
 import numpy as np
 from loguru import logger
+from skimage.feature import hog
 from typing import Dict, Any
 from models.backbones.resnet50 import RESNET_backbone
 from models.backbones.vgg import VGG_backbone
 from models.backbones.vit import VIT_backbone
 from .transformations import LanguageRecognitionTransforms
+from tqdm import tqdm
 import json
 
 
@@ -19,7 +23,6 @@ class BHSceneDataset(Dataset):
             root_dir: str = "data/recognition", 
             train_split: bool = True, 
             transformation: bool = True,
-            linear_transform: bool = False,
             backbone: str = None,
             gap_dim: int = 1
         ) -> None:
@@ -28,8 +31,8 @@ class BHSceneDataset(Dataset):
         Args:
         - root_dir: str, path to the root directory of the dataset
         - train_split: bool, whether to use train split or test split
-        - Transformation: bool, whether to use albumentations for transformations
-        - linear_transform: bool, whether to linearize the image before passing to the backbone
+        - Transformation: bool, whether to use albumentations for data augmentation
+        #removed (not needed)  - linear_transform: bool, whether to linearize the image before passing to the backbone
         - backbone: str, backbone to be used for feature extraction ## resnet50, vgg, vit
         ###### swin, beit in progress
         - gap_dim: int, dimension of the global average pooled features
@@ -42,10 +45,23 @@ class BHSceneDataset(Dataset):
         super(BHSceneDataset, self).__init__()
         self.root_dir = root_dir
         self.csv_path = os.path.join(self.root_dir, "train.csv" if train_split else "test.csv")
-        self.linear_transform = linear_transform
+        self.linear_transform = True
+        self.backbone_name = backbone
         self.backbone = backbone
         self.gap_dim = gap_dim
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.latent_dir = os.path.join(
+            "data",
+            f"latent_{backbone}_{'data_augmentation' if transformation else 'no_data_augmentation'}_{gap_dim}",
+            "train" if train_split else "test"
+        )
+
+        if not os.path.exists(self.latent_dir):
+            os.makedirs(self.latent_dir)
+            logger.info(f"latent_dir not present")
+            logger.info(f"Created directory {self.latent_dir}")
+        else:
+            logger.info(f"latent_dir already present at {self.latent_dir}")
 
         if not self.linear_transform:
             logger.warning("linear_transform is set to False")
@@ -80,26 +96,29 @@ class BHSceneDataset(Dataset):
             logger.info("No backbone specified")
         elif backbone == 'resnet50':
             self.backbone = RESNET_backbone(pretrained=True, gap_dim=gap_dim).to(self.device)
-            self.backbone = RESNET_backbone(pretrained=True, gap_dim=gap_dim).to(self.device)
             logger.info("Using ResNet50 backbone")
         elif backbone == 'vgg':
-            self.backbone = VGG_backbone(pretrained=True, gap_dim=gap_dim).to(self.device)
             self.backbone = VGG_backbone(pretrained=True, gap_dim=gap_dim).to(self.device)
             logger.info("Using VGG backbone")
         elif backbone == 'vit':
             self.backbone = VIT_backbone(pretrained=True).to(self.device)
-            self.backbone = VIT_backbone(pretrained=True).to(self.device)
             logger.info("Using VIT backbone")
+        elif backbone == "sift":
+            self.backbone = cv2.SIFT_create()
+            self.topk = 64
+            self.expected_dim = 128*self.topk
+            logger.info("Using SIFT for feature extraction")
+        elif backbone == "hog":
+            logger.info(f"Using HOG for feature extraction")
         else:
             raise ValueError(f"Invalid backbone: {backbone}, valid backbones are: resnet50, vgg, vit")
-            
         
         self.csv = pd.read_csv(self.csv_path, header=0, index_col=None)
 
         with open('./dataset/language_encode.json') as f:
             self.language_mapping = json.load(f)
 
-        self.csv['Language'] = self.csv['Language'].apply(lambda x : self.encode_language(x))
+        self.csv['Language_id'] = self.csv['Language'].apply(lambda x : self.encode_language(x))
         ## print unique language
         # print(self.csv['Language'].unique())
         logger.info(f"Loaded csv file from {self.csv_path}")
@@ -111,6 +130,48 @@ class BHSceneDataset(Dataset):
             raise ValueError(f"Language {language} not in mapping")
         # if language is in the mapping, return the corresponding value
         return self.language_mapping[language]
+    
+    def apply_sift(self, image):
+        np_image = image.squeeze(0).permute(1, 2, 0).cpu()
+        ## print max and min element
+        # print(np_image.max(), np_image.min())
+        # np_image = (image * 255).astype(np.uint8)
+        np_image = np_image.numpy().astype(np.uint8)
+        # Convert to grayscale (OpenCV expects HxWxC)
+        gray = cv2.cvtColor(np_image, cv2.COLOR_RGB2GRAY)
+        keypoints, descriptors = self.backbone.detectAndCompute(gray, None)
+        sorted_indices = np.argsort([-kp.response for kp in keypoints])
+        # Select max (len(keypoints), self.topk) indices
+        # logger.info(f"total extracted keypoints - {len(sorted_indices)}")
+        top_indices = sorted_indices[:self.topk]
+        # Select corresponding descriptors
+        selected_descriptors = descriptors[top_indices]
+        # Flatten the descriptors and return
+        selected_descriptors = selected_descriptors.flatten()
+        ## if dim < expected_dim, pad with zeros
+        if selected_descriptors.shape[0] < self.expected_dim:
+            selected_descriptors = np.pad(selected_descriptors, (0, self.expected_dim - selected_descriptors.shape[0]), 'constant')
+        return selected_descriptors
+    
+    def apply_hog(self, image):
+        np_image = image.squeeze(0).permute(1, 2, 0).cpu()
+        ## print max and min element
+        # print(np_image.max(), np_image.min())
+        # np_image = (image * 255).astype(np.uint8)
+        np_image = np_image.numpy().astype(np.uint8)
+        # Convert to grayscale (OpenCV expects HxWxC)
+        gray = cv2.cvtColor(np_image, cv2.COLOR_RGB2GRAY)
+        features = hog(
+            gray,
+            orientations = 9,
+            pixels_per_cell = (8, 8),
+            cells_per_block = (2, 2),
+            block_norm='L2-Hys',
+            transform_sqrt=True,
+            feature_vector=True
+        )
+        return features
+
 
     def __len__(self) -> int:
         return len(self.csv)
@@ -118,6 +179,28 @@ class BHSceneDataset(Dataset):
     def __getitem__(self, index: int) -> Dict[str, Any]:
 
         row = self.csv.iloc[index]
+        
+        ## latent dir
+        latent_image_dir = os.path.join(
+            self.latent_dir,
+            row['Language']
+        )
+
+        if not os.path.exists(
+            latent_image_dir
+        ):
+            os.makedirs(latent_image_dir)
+            logger.info(f"Created directory {latent_image_dir}")
+
+        ## save latent features
+        latent_image_path = os.path.join(
+            latent_image_dir,
+            os.path.basename(row['Filepath']).split('.')[0] + '.npy'
+        )
+
+        if os.path.exists(latent_image_path):
+            latent = np.load(latent_image_path)
+            return torch.tensor(latent).float().to(self.device), row['Language_id']
         
         img_path = os.path.join(self.root_dir, row['Filepath'])
         image = cv2.imread(img_path)
@@ -146,14 +229,24 @@ class BHSceneDataset(Dataset):
         ## for transformations, image is already in the required format
         if self.backbone is not None:
             assert image.shape == (1, 3, 224, 224), f"Image shape is {image.shape}"
-            image = self.backbone(image)
-            image = image.squeeze(0)
+            if self.backbone_name == 'sift':
+                image = self.apply_sift(image)
+                image = torch.tensor(image).float().to(self.device)
+            elif self.backbone_name == 'hog':
+                image = self.apply_hog(image)
+                image = torch.tensor(image).float().to(self.device)
+            else:
+                image = self.backbone(image)
+                image = image.squeeze(0)
         else:
             if self.linear_transform:
                 # current dim - 1x3x224x224
                 image = image.reshape(-1)
-            
-        return image, row['Language']
+
+        ## save latent features at latent_image_path
+        np.save(latent_image_path, image.cpu().detach().numpy())
+    
+        return image, row['Language_id']
 
 
 def test_dataset():
@@ -195,11 +288,13 @@ if __name__ == "__main__":
         root_dir="data/recognition",
         train_split=False,
         transformation=True,
-        linear_transform=False,
-        backbone='resnet50',
+        backbone='sift',
         gap_dim=1
     )
 
-    for i in range(1):
+    for i in range(10):
         img, lang = dataset[i]
         print(f"Image shape: {img.shape}, Language: {lang}")
+
+    # for i in tqdm(range(len(dataset)), desc="Processing dataset", unit="sample"):
+    #     img, lang = dataset[i]
