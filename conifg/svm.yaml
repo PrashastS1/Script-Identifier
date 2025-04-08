@@ -1,16 +1,14 @@
 train_dataset:
   root_dir: "data/recognition"
   train_split: True 
-  transform: null
-  linear_transform: True
+  transformation: True
   backbone: null
   gap_dim:  1
 
 test_dataset:
   root_dir: "data/recognition"
   train_split: False
-  transform: null
-  linear_transform: True
+  transformation: True
   backbone: null
   gap_dim:  1
 
