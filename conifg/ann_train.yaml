@@ -2,7 +2,6 @@ train_dataset:
   root_dir: "data/recognition"
   train_split: True 
   transformation: True
-  linear_transform: True
   backbone: vit
   gap_dim:  7
 
@@ -10,7 +9,6 @@ test_dataset:
   root_dir: "data/recognition"
   train_split: False
   transformation: True
-  linear_transform: True
   backbone: vit
   gap_dim:  7
 
@@ -26,5 +24,4 @@ training_params:
     batch_size: 64
     num_epochs: 10
     model:
-      num_feature: 768
-      num_class: 14
+      layers: [768, 512, 14]

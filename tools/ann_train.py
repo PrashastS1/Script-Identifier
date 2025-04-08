@@ -34,15 +34,7 @@ def test(
     all_targets = []    ## all targets
     
     with torch.no_grad():       ## no gradient
-        model.eval()    ## set the model to eval mode
-
-    correct = 0     ## correct prediction
-    all_preds = []  ## all predictions
-    all_targets = []    ## all targets
-    
-    with torch.no_grad():       ## no gradient
         for data, target in test_loader:
-            data, target = data.to(device), target.to(device)
             data, target = data.to(device), target.to(device)
             output = model(data)        ## get logit
             preds = output.argmax(dim=1)    ## get prediction
@@ -73,17 +65,13 @@ def train(
 
     results =[]
     loss_fn = nn.CrossEntropyLoss()
-    loss_fn = nn.CrossEntropyLoss()
     for epoch in range(epochs):     ## for each epoch
         model.train()
-        all_preds = []
-        all_targets = []
         all_preds = []
         all_targets = []
         for data, target in tqdm(train_loader):
             data, target = data.to(device), target.to(device)
             output = model(data)        ## get logit
-            loss = loss_fn(output, target)    ## get loss
             loss = loss_fn(output, target)    ## get loss
             optimizer.zero_grad()    ## zero the gradient
             loss.backward()    ## backpropagation
@@ -91,13 +79,7 @@ def train(
             preds = output.argmax(dim=1)
             all_preds.append(preds.cpu().numpy())
             all_targets.append(target.cpu().numpy())
-            preds = output.argmax(dim=1)
-            all_preds.append(preds.cpu().numpy())
-            all_targets.append(target.cpu().numpy())
 
-        # train_acc, train_f1 = test(model, train_loader, device)   ## get train accuracy and f1 score
-        train_acc = accuracy_score(np.concatenate(all_targets), np.concatenate(all_preds)) * 100
-        train_f1 = f1_score(np.concatenate(all_targets), np.concatenate(all_preds), average="macro")
         # train_acc, train_f1 = test(model, train_loader, device)   ## get train accuracy and f1 score
         train_acc = accuracy_score(np.concatenate(all_targets), np.concatenate(all_preds)) * 100
         train_f1 = f1_score(np.concatenate(all_targets), np.concatenate(all_preds), average="macro")
@@ -108,8 +90,7 @@ def train(
                 "train_accuracy": train_acc, 
                 "train_f1": train_f1, 
                 "test_accuracy": test_acc, 
-                "test_f1": 
-                test_f1
+                "test_f1": test_f1
             }
         )       ## save the result
 
