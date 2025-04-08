@@ -2,6 +2,8 @@ from torch.utils.data import Dataset
 import torch
 import pandas as pd
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import cv2
 import numpy as np
 from loguru import logger

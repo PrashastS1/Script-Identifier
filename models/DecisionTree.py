@@ -1,5 +1,7 @@
 import numpy as np
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import torch
 from torch.utils.data import DataLoader
 from sklearn.tree import DecisionTreeClassifier
@@ -33,50 +35,38 @@ def extract_features(dataset, batch_size=4096):
     return np.vstack(X_list), np.concatenate(y_list)
 
 if __name__ == '__main__':
-    mp.set_start_method("spawn", force=True)
+    # mp.set_start_method("spawn", force=True)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
    
 
-    # # Set Random State for Reproducibility
+    # Set Random State for Reproducibility
     # clf = DecisionTreeClassifier(max_depth=10, random_state=42)
 
-    # # Load Training Data
-    # train_dataset = BHSceneDataset(
-    #     root_dir="data/recognition",
-    #     train_split=True,
-    #     transform=None,
-    #     linear_transform=True,
-    #     backbone='resnet50',
-    #     gap_dim=1
-    # )
+    # Load Training Data
+    train_dataset = BHSceneDataset(
+        root_dir="data/recognition",
+        train_split=True,
+        transformation=True,
+        backbone='vit',
+    )
 
-    # X_train, y_train = extract_features(train_dataset)
-    # clf.fit(X_train, y_train)
+    X_train, y_train = extract_features(train_dataset)
 
-    # # Load Test Data
-    # test_dataset = BHSceneDataset(
-    #     root_dir="data/recognition",
-    #     train_split=False,
-    #     transform=None,
-    #     linear_transform=True,
-    #     backbone='resnet50',
-    #     gap_dim=1
-    # )
+    # Load Test Data
+    test_dataset = BHSceneDataset(
+        root_dir="data/recognition",
+        train_split=False,
+        transformation=True,
+        backbone='vit',
+    )
 
-    # X_test, y_test = extract_features(test_dataset)
-    # y_pred = clf.predict(X_test)
-
-    # # Compute Accuracy
-    # acc = accuracy(y_test, y_pred)
-    # print(f"Test Accuracy: {acc:.4f}")
+    X_test, y_test = extract_features(test_dataset)
 
     param_grid = {
         'criterion': ['gini', 'entropy'],
         'max_depth': [5, 10, 15],
-        'backbone': ['vgg'],
-        'gap_dim_resnet': [1, 3, 5, 7],
-        'gap_dim_vgg': [1, 4, 7, 10, 13]
+        'backbone': ['vit'],
     }
 
     best_acc = 0
@@ -88,37 +78,34 @@ if __name__ == '__main__':
 
     # Manual Grid Search
     for backbone in param_grid['backbone']:
-        gap_dims = param_grid['gap_dim_resnet'] if backbone == 'resnet50' else param_grid['gap_dim_vgg']
         
-        for gap_dim in gap_dims:
-            torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
 
-            train_dataset = BHSceneDataset(root_dir="data/recognition", train_split=True,
-                                        linear_transform=True, backbone=backbone, gap_dim=gap_dim) # 
-            X_train, y_train = extract_features(train_dataset)
+        train_dataset = BHSceneDataset(root_dir="data/recognition", train_split=True,
+                                    linear_transform=True, backbone=backbone) # 
+        X_train, y_train = extract_features(train_dataset)
 
-            test_dataset = BHSceneDataset(root_dir="data/recognition", train_split=False,
-                                        linear_transform=True, backbone=backbone, gap_dim=gap_dim) # 
-            X_test, y_test = extract_features(test_dataset)
+        test_dataset = BHSceneDataset(root_dir="data/recognition", train_split=False,
+                                    linear_transform=True, backbone=backbone) # 
+        X_test, y_test = extract_features(test_dataset)
 
-            # Iterate over all parameter combinations
-            for criterion, max_depth in product(param_grid['criterion'], param_grid['max_depth']):
-                clf = DecisionTreeClassifier(criterion=criterion, max_depth=max_depth, random_state=42)
-                clf.fit(X_train, y_train)
-                y_pred = clf.predict(X_test)
-                acc = accuracy_score(y_test, y_pred)
+        # Iterate over all parameter combinations
+        for criterion, max_depth in product(param_grid['criterion'], param_grid['max_depth']):
+            clf = DecisionTreeClassifier(criterion=criterion, max_depth=max_depth, random_state=42)
+            clf.fit(X_train, y_train)
+            y_pred = clf.predict(X_test)
+            acc = accuracy_score(y_test, y_pred)
 
-                logger.info(f"Backbone: {backbone}, GAP: {gap_dim}, Criterion: {criterion}, "
-                            f"Max Depth: {max_depth}, Acc: {acc:.4f}")
+            logger.info(f"Backbone: {backbone}, Criterion: {criterion}, "
+                        f"Max Depth: {max_depth}, Acc: {acc:.4f}")
 
-                results.append({'backbone': backbone, 'gap_dim': gap_dim, 'criterion': criterion, 
-                                'max_depth': max_depth, 'accuracy': acc})
+            results.append({'backbone': backbone, 'criterion': criterion, 
+                            'max_depth': max_depth, 'accuracy': acc})
 
-                # Track the best model
-                if acc > best_acc:
-                    best_acc = acc
-                    best_params = {'backbone': backbone, 'gap_dim': gap_dim, 
-                                'criterion': criterion, 'max_depth': max_depth}
+            # Track the best model
+            if acc > best_acc:
+                best_acc = acc
+                best_params = {'backbone': backbone, 'criterion': criterion, 'max_depth': max_depth}
 
     logger.success(f"\nBest Accuracy: {best_acc:.4f}, Best Params: {best_params}")
 
@@ -126,56 +113,29 @@ if __name__ == '__main__':
     results_df = pd.DataFrame(results)
 
     plt.figure(figsize=(10, 6))
-    sns.barplot(x='backbone', y='accuracy', hue='gap_dim', data=results_df)
-    plt.title('DT Accuracy by Backbone and GAP Dimension')
-    plt.savefig(os.path.join(plots_dir, "vgg_dt_accuracy_by_backbone_gapdim.png"))
+    sns.barplot(x='backbone', y='accuracy', hue='criterion', data=results_df)
+    plt.title('DT Accuracy by Backbone and Criterion')
+    plt.savefig(os.path.join(plots_dir, "vit_dt_accuracy_by_backbone_criterion.png"))
     plt.show()
 
     plt.figure(figsize=(12, 6))
-    sns.catplot(x='max_depth', y='accuracy', col='backbone', hue='gap_dim', kind='bar', data=results_df, height=5,
-                aspect=0.8)
-    plt.suptitle('DT Accuracy by Max Depth, Backbone, and GAP Dimension', y=1.02)
-    plt.savefig(os.path.join(plots_dir, "vgg_dt_accuracy_by_maxdepth_backbone_gapdim.png"))
+    sns.catplot(x='max_depth', y='accuracy', col='backbone', hue='criterion', 
+                kind='bar', data=results_df, height=5, aspect=0.8)
+    plt.suptitle('DT Accuracy by Max Depth, Backbone, and Criterion', y=1.02)
+    plt.savefig(os.path.join(plots_dir, "vit_dt_accuracy_by_maxdepth_backbone_criterion.png"))
     plt.show()
 
-
-    heatmap_data = results_df.pivot_table(index='gap_dim', columns=['backbone', 'max_depth'], values='accuracy')
+    heatmap_data = results_df.pivot_table(index='max_depth', 
+                                        columns=['backbone', 'criterion'], 
+                                        values='accuracy')
     plt.figure(figsize=(12, 8))
     sns.heatmap(heatmap_data, annot=True, fmt=".4f", cmap="YlGnBu")
-    plt.title('DT Accuracy Heatmap')
-    plt.savefig(os.path.join(plots_dir, "vgg_dt_accuracy_heatmap.png"))
+    plt.title('DT Accuracy Heatmap (by max_depth, backbone, and criterion)')
+    plt.savefig(os.path.join(plots_dir, "vit_dt_accuracy_heatmap.png"))
     plt.show()
 
     plt.figure(figsize=(8, 6))
     sns.boxplot(x='criterion', y='accuracy', data=results_df)
     plt.title('DT Accuracy by Impurity Criterion')
-    plt.savefig(os.path.join(plots_dir, "vgg_dt_accuracy_by_criterion.png"))
+    plt.savefig(os.path.join(plots_dir, "vit_dt_accuracy_by_criterion.png"))
     plt.show()
-
-    # plt.figure(figsize=(10, 6))
-    # sns.barplot(x='backbone', y='accuracy', hue='criterion', data=results_df)
-    # plt.title('DT Accuracy by Backbone and Criterion')
-    # plt.savefig(os.path.join(plots_dir, "vit_dt_accuracy_by_backbone_criterion.png"))
-    # plt.show()
-
-    # plt.figure(figsize=(12, 6))
-    # sns.catplot(x='max_depth', y='accuracy', col='backbone', hue='criterion', 
-    #             kind='bar', data=results_df, height=5, aspect=0.8)
-    # plt.suptitle('DT Accuracy by Max Depth, Backbone, and Criterion', y=1.02)
-    # plt.savefig(os.path.join(plots_dir, "vit_dt_accuracy_by_maxdepth_backbone_criterion.png"))
-    # plt.show()
-
-    # heatmap_data = results_df.pivot_table(index='max_depth', 
-    #                                     columns=['backbone', 'criterion'], 
-    #                                     values='accuracy')
-    # plt.figure(figsize=(12, 8))
-    # sns.heatmap(heatmap_data, annot=True, fmt=".4f", cmap="YlGnBu")
-    # plt.title('DT Accuracy Heatmap (by max_depth, backbone, and criterion)')
-    # plt.savefig(os.path.join(plots_dir, "vit_dt_accuracy_heatmap.png"))
-    # plt.show()
-
-    # plt.figure(figsize=(8, 6))
-    # sns.boxplot(x='criterion', y='accuracy', data=results_df)
-    # plt.title('DT Accuracy by Impurity Criterion')
-    # plt.savefig(os.path.join(plots_dir, "vit_dt_accuracy_by_criterion.png"))
-    # plt.show()

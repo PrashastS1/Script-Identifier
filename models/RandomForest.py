@@ -1,6 +1,8 @@
 import numpy as np
 import os
 import torch
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from torch.utils.data import DataLoader
 from sklearn.ensemble import RandomForestClassifier
 from tqdm import tqdm
@@ -38,42 +40,25 @@ if __name__ == '__main__':
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # # Configure GPU-based Random Forest Classifier
-    # clf = RandomForestClassifier(
-    #     n_estimators=100,  # Number of decision trees
-    #     max_depth=20,  # Control overfitting
-    #     random_state=42
-    # )
+    # Load Training Data
+    train_dataset = BHSceneDataset(
+        root_dir="data/recognition",
+        train_split=True,
+        transformation=True,
+        backbone='vit',
+    )
 
-    # # Load Training Data
-    # train_dataset = BHSceneDataset(
-    #     root_dir="data/recognition",
-    #     train_split=True,
-    #     transform=None,
-    #     linear_transform=True,
-    #     backbone='resnet50',
-    #     gap_dim=1
-    # )
+    X_train, y_train = extract_features(train_dataset)
 
-    # X_train, y_train = extract_features(train_dataset)
-    # clf.fit(X_train, y_train)  # GPU-based training
+    # Load Test Data
+    test_dataset = BHSceneDataset(
+        root_dir="data/recognition",
+        train_split=False,
+        transformation=True,
+        backbone='vit',
+    )
 
-    # # Load Test Data
-    # test_dataset = BHSceneDataset(
-    #     root_dir="data/recognition",
-    #     train_split=False,
-    #     transform=None,
-    #     linear_transform=True,
-    #     backbone='resnet50',
-    #     gap_dim=1
-    # )
-
-    # X_test, y_test = extract_features(test_dataset)
-    # y_pred = clf.predict(X_test)  # GPU-based prediction
-
-    # # Compute Accuracy
-    # acc = accuracy(y_test, y_pred)
-    # print(f"Test Accuracy: {cp.asnumpy(acc):.4f}")  # Convert to NumPy for printing
+    X_test, y_test = extract_features(test_dataset)
 
     param_grid = {
         'n_estimators': [50, 100, 150],
@@ -93,115 +78,78 @@ if __name__ == '__main__':
 
     # Manual Grid Search
     for backbone in param_grid['backbone']:
-        gap_dims = param_grid['gap_dim_resnet'] if backbone == 'resnet50' else param_grid['gap_dim_vgg']
         
-        for gap_dim in gap_dims:
-            torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
 
-            # Load data
-            train_dataset = BHSceneDataset(root_dir="data/recognition", train_split=True,
-                                        linear_transform=True, backbone=backbone, gap_dim=gap_dim) 
-            X_train, y_train = extract_features(train_dataset)
+        # Load data
+        train_dataset = BHSceneDataset(root_dir="data/recognition", train_split=True,
+                                    linear_transform=True, backbone=backbone) 
+        X_train, y_train = extract_features(train_dataset)
 
-            test_dataset = BHSceneDataset(root_dir="data/recognition", train_split=False,
-                                        linear_transform=True, backbone=backbone, gap_dim=gap_dim)  
-            X_test, y_test = extract_features(test_dataset)
+        test_dataset = BHSceneDataset(root_dir="data/recognition", train_split=False,
+                                    linear_transform=True, backbone=backbone)  
+        X_test, y_test = extract_features(test_dataset)
 
-            # Iterate over all parameter combinations
-            for n_estimators, max_depth, criterion in product(param_grid['n_estimators'], 
-                                                            param_grid['max_depth'], 
-                                                            param_grid['criterion']):
-                clf = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, 
-                                            criterion=criterion, random_state=42)
-                clf.fit(X_train, y_train)
-                y_pred = clf.predict(X_test)
-                acc = accuracy_score(y_test, y_pred)
+        # Iterate over all parameter combinations
+        for n_estimators, max_depth, criterion in product(param_grid['n_estimators'], 
+                                                        param_grid['max_depth'], 
+                                                        param_grid['criterion']):
+            clf = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, 
+                                        criterion=criterion, random_state=42)
+            clf.fit(X_train, y_train)
+            y_pred = clf.predict(X_test)
+            acc = accuracy_score(y_test, y_pred)
 
-                logger.info(f"Backbone: {backbone}, GAP: {gap_dim}, n_estimators: {n_estimators}, "
-                    f"Max Depth: {max_depth}, Criterion: {criterion}, Acc: {acc:.4f}")
+            logger.info(f"Backbone: {backbone}, n_estimators: {n_estimators}, "
+                f"Max Depth: {max_depth}, Criterion: {criterion}, Acc: {acc:.4f}")
 
-                results.append({'backbone': backbone, 'gap_dim': gap_dim, 'n_estimators': n_estimators,
-                                'max_depth': max_depth, 'criterion': criterion, 'accuracy': acc})
+            results.append({'backbone': backbone, 'n_estimators': n_estimators,
+                            'max_depth': max_depth, 'criterion': criterion, 'accuracy': acc})
 
-                # Track the best model
-                if acc > best_acc:
-                    best_acc = acc
-                    best_params = {'backbone': backbone, 'gap_dim': gap_dim, 
-                                'n_estimators': n_estimators, 'max_depth': max_depth, 'criterion': criterion}
+            # Track the best model
+            if acc > best_acc:
+                best_acc = acc
+                best_params = {'backbone': backbone, 'n_estimators': n_estimators, 'max_depth': max_depth, 'criterion': criterion}
 
     logger.success(f"\nBest Accuracy: {best_acc:.4f}, Best Params: {best_params}")
 
 
     results_df = pd.DataFrame(results)
 
+
     plt.figure(figsize=(10, 6))
-    sns.lineplot(x='n_estimators', y='accuracy', hue='backbone', data=results_df)  # Use lineplot for trends
+    sns.lineplot(x='n_estimators', y='accuracy', hue='backbone', style='criterion', data=results_df)
     plt.title('RF Accuracy vs. Number of Estimators')
     plt.xlabel('Number of Estimators')
     plt.ylabel('Accuracy')
-    plt.savefig(os.path.join(plots_dir, "vgg_rf_accuracy_vs_n_estimators.png"))
+    plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_vs_n_estimators.png"))
     plt.show()
 
     plt.figure(figsize=(10, 6))
-    sns.barplot(x='backbone', y='accuracy', hue='gap_dim', data=results_df)
-    plt.title('RF Accuracy by Backbone and GAP Dimension')
-    plt.savefig(os.path.join(plots_dir, "vgg_rf_accuracy_by_backbone_gapdim.png"))
+    sns.barplot(x='backbone', y='accuracy', hue='criterion', data=results_df)
+    plt.title('RF Accuracy by Backbone and Criterion')
+    plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_by_backbone_criterion.png"))
     plt.show()
 
     plt.figure(figsize=(12, 6))
-    sns.catplot(x='max_depth', y='accuracy', col='backbone', hue='gap_dim', kind='bar', data=results_df, height=5,
-                aspect=0.8)
-    plt.suptitle('RF Accuracy by Max Depth, Backbone, and GAP Dimension', y=1.02)
-    plt.savefig(os.path.join(plots_dir, "vgg_rf_accuracy_by_maxdepth_backbone_gapdim.png"))
+    sns.catplot(x='max_depth', y='accuracy', col='backbone', hue='criterion', 
+                kind='bar', data=results_df, height=5, aspect=0.8)
+    plt.suptitle('RF Accuracy by Max Depth, Backbone, and Criterion', y=1.02)
+    plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_by_maxdepth_backbone_criterion.png"))
     plt.show()
 
-
-    heatmap_data = results_df.pivot_table(index='gap_dim', columns=['backbone', 'max_depth'], values='accuracy')
+    heatmap_data = results_df.pivot_table(index='n_estimators', 
+                                        columns=['backbone', 'max_depth'], 
+                                        values='accuracy')
     plt.figure(figsize=(12, 8))
     sns.heatmap(heatmap_data, annot=True, fmt=".4f", cmap="YlGnBu")
-    plt.title('RF Accuracy Heatmap')
-    plt.savefig(os.path.join(plots_dir, "vgg_rf_accuracy_heatmap.png"))
+    plt.title('RF Accuracy Heatmap (by n_estimators, backbone, and max_depth)')
+    plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_heatmap.png"))
     plt.show()
 
     plt.figure(figsize=(8, 6))
     sns.boxplot(x='criterion', y='accuracy', data=results_df)
     plt.title('RF Accuracy by Impurity Criterion')
-    plt.savefig(os.path.join(plots_dir, "vgg_rf_accuracy_by_criterion.png"))
+    plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_by_criterion.png"))
     plt.show()
-
-    # plt.figure(figsize=(10, 6))
-    # sns.lineplot(x='n_estimators', y='accuracy', hue='backbone', style='criterion', data=results_df)
-    # plt.title('RF Accuracy vs. Number of Estimators')
-    # plt.xlabel('Number of Estimators')
-    # plt.ylabel('Accuracy')
-    # plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_vs_n_estimators.png"))
-    # plt.show()
-
-    # plt.figure(figsize=(10, 6))
-    # sns.barplot(x='backbone', y='accuracy', hue='criterion', data=results_df)
-    # plt.title('RF Accuracy by Backbone and Criterion')
-    # plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_by_backbone_criterion.png"))
-    # plt.show()
-
-    # plt.figure(figsize=(12, 6))
-    # sns.catplot(x='max_depth', y='accuracy', col='backbone', hue='criterion', 
-    #             kind='bar', data=results_df, height=5, aspect=0.8)
-    # plt.suptitle('RF Accuracy by Max Depth, Backbone, and Criterion', y=1.02)
-    # plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_by_maxdepth_backbone_criterion.png"))
-    # plt.show()
-
-    # heatmap_data = results_df.pivot_table(index='n_estimators', 
-    #                                     columns=['backbone', 'max_depth'], 
-    #                                     values='accuracy')
-    # plt.figure(figsize=(12, 8))
-    # sns.heatmap(heatmap_data, annot=True, fmt=".4f", cmap="YlGnBu")
-    # plt.title('RF Accuracy Heatmap (by n_estimators, backbone, and max_depth)')
-    # plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_heatmap.png"))
-    # plt.show()
-
-    # plt.figure(figsize=(8, 6))
-    # sns.boxplot(x='criterion', y='accuracy', data=results_df)
-    # plt.title('RF Accuracy by Impurity Criterion')
-    # plt.savefig(os.path.join(plots_dir, "vit_rf_accuracy_by_criterion.png"))
-    # plt.show()
 
