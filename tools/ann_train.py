@@ -12,8 +12,7 @@ from utils.ann_plot_utils import (
 from dataset.BH_scene_dataset import BHSceneDataset
 from models.ann import ANN_base
 from typing_extensions import List, Dict, Tuple
-import matplotlib.pyplot as plt
-import seaborn as sns
+from loguru import logger
 import numpy as np
 from tqdm import tqdm
 import json
@@ -95,11 +94,11 @@ def train(
         )       ## save the result
 
         ## print train and test result
-        print(f"Epoch: {epoch}, Train Accuracy: {train_acc}, Test Accuracy: {test_acc}")
-        print(f"Epoch: {epoch}, Train F1: {train_f1}, Test F1: {test_f1}")
+        logger.debug(f"Epoch: {epoch}, Train Accuracy: {train_acc}, Test Accuracy: {test_acc}")
+        logger.debug(f"Epoch: {epoch}, Train F1: {train_f1}, Test F1: {test_f1}")
 
-    print(f"Final Train Accuracy: {results[-1]['train_accuracy']}, Final Test Accuracy: {results[-1]['test_accuracy']}")
-    print(f"Final Train F1: {results[-1]['train_f1']}, Final Test F1: {results[-1]['test_f1']}")
+    logger.info(f"Final Train Accuracy: {results[-1]['train_accuracy']}, Final Test Accuracy: {results[-1]['test_accuracy']}")
+    logger.info(f"Final Train F1: {results[-1]['train_f1']}, Final Test F1: {results[-1]['test_f1']}")
 
     return model, optimizer, results
     
@@ -188,7 +187,7 @@ def main():
         test_loader = DataLoader(test_dataset, batch_size=default_param["batch_size"], shuffle=True)
         ## train the model
         model, optimizer, result = train(model, train_loader, test_loader, optimizer, device, default_param["num_epochs"])
-        print(result)
+        logger.info(result)
         
 
 if __name__=="__main__":
