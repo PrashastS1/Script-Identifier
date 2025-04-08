@@ -1,0 +1,27 @@
+train_dataset:
+  root_dir: "data/recognition"
+  train_split: True 
+  transformation: True
+  backbone: vit
+  gap_dim: 7
+
+test_dataset:
+  root_dir: "data/recognition"
+  train_split: False
+  transformation: True
+  backbone: vit
+  gap_dim: 7
+
+training_params:
+  save_plots: True
+  exp_name: "siamese_vit_da"
+  run_experiments: True
+  hyperparameter_range:
+    learning_rate: [0.0003, 0.00005, 0.0001]
+    batch_size: [32, 64, 256]
+  default_param:
+    learning_rate: 0.001
+    batch_size: 64
+    num_epochs: 10
+    model:
+      layers: [1536, 512, 256, 1]  # 2*768=1536 input (concat pair), 1 output

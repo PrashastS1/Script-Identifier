@@ -2,11 +2,9 @@ from torch.utils.data import Dataset
 import torch
 import pandas as pd
 import os
-import cv2
 import numpy as np
 from loguru import logger
-import random
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any
 from .BH_scene_dataset import BHSceneDataset
 from collections import defaultdict
 import json
@@ -149,7 +147,7 @@ class PairedLanguageDataset(Dataset):
         ## Concatenate images
         assert anchor_img.shape == pair_img.shape, "Image channels do not match"
 
-        return torch.cat((anchor_img, pair_img), dim=0), np.int8(1 if same_class else 0)
+        return torch.cat((anchor_img, pair_img), dim=0), np.float32(1 if same_class else 0)
 
 
 # Example usage
