@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 
 # Load Dataset
-train_csv_path = r"C:\Users\jenis_td7jjpo\Desktop\PRML\Project\Script-Identifier\data\recognition\train.csv"  # Update path if needed
+train_csv_path = r"C:\Users\Jenish\Desktop\PRML\Project\Script-Identifier\data\recognition\train.csv"  # Update path if needed
 df = pd.read_csv(train_csv_path)
 
 # Count occurrences of each script

@@ -43,6 +43,6 @@ def plot_sample_images(sample_images):
     fig.show()
 
 # Set the path to the dataset
-data_dir = r"C:\Users\jenis_td7jjpo\Desktop\PRML\Project\Script-Identifier\data\recognition\train"  # Adjust the path accordingly
+data_dir = r"C:\Users\Jenish\Desktop\PRML\Project\Script-Identifier\data\recognition\train"  # Adjust the path accordingly
 sample_images = load_sample_images(data_dir)
 plot_sample_images(sample_images)
