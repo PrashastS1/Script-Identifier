@@ -1,0 +1,199 @@
+2025-03-28 16:08:29,757 - INFO - Script started.
+2025-03-28 16:08:37,502 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/train.csv for language: assamese
+2025-03-28 16:08:56,744 - INFO - Script started.
+2025-03-28 16:09:00,423 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/train.csv for language: english
+2025-03-28 16:09:10,781 - INFO - Script started.
+2025-03-28 16:09:13,911 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/train.csv for language: gujarati
+2025-03-28 16:13:29,794 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/test.csv for language: assamese
+2025-03-28 16:13:29,796 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/test.csv for language: english
+2025-03-28 16:13:29,798 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/test.csv for language: gujarati
+2025-03-28 16:14:50,297 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-28 16:14:50,297 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-28 16:14:50,299 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-28 16:17:24,414 - INFO - Model Accuracy: 83.52%
+2025-03-28 16:17:24,429 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.89      0.84      0.87     14223
+           1       0.75      0.82      0.78      8113
+
+    accuracy                           0.84     22336
+   macro avg       0.82      0.83      0.83     22336
+weighted avg       0.84      0.84      0.84     22336
+
+2025-03-28 16:17:24,446 - INFO - Script finished.
+2025-03-28 16:17:24,446 - INFO - =========================================
+2025-03-28 16:17:30,816 - INFO - Saved decision boundary plot for english at d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\plots\english_20250328_161728.png
+2025-03-28 16:19:31,844 - INFO - Model Accuracy: 80.06%
+2025-03-28 16:19:31,860 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.97      0.81      0.88     20993
+           1       0.18      0.66      0.29      1343
+
+    accuracy                           0.80     22336
+   macro avg       0.58      0.74      0.58     22336
+weighted avg       0.93      0.80      0.85     22336
+
+2025-03-28 16:19:31,876 - INFO - Script finished.
+2025-03-28 16:19:31,876 - INFO - =========================================
+2025-03-28 16:19:37,441 - INFO - Saved decision boundary plot for assamese at d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\plots\assamese_20250328_161935.png
+2025-03-28 16:21:17,826 - INFO - Model Accuracy: 83.65%
+2025-03-28 16:21:17,857 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.98      0.85      0.91     21643
+           1       0.10      0.54      0.17       693
+
+    accuracy                           0.84     22336
+   macro avg       0.54      0.69      0.54     22336
+weighted avg       0.96      0.84      0.89     22336
+
+2025-03-28 16:21:17,891 - INFO - Script finished.
+2025-03-28 16:21:17,891 - INFO - =========================================
+2025-03-28 16:21:24,093 - INFO - Saved decision boundary plot for gujarati at d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\plots\gujarati_20250328_162121.png
+2025-03-28 16:28:55,645 - INFO - Script started.
+2025-03-28 16:29:06,183 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/train.csv for language: hindi
+2025-03-28 16:29:12,605 - INFO - Script started.
+2025-03-28 16:29:15,591 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/train.csv for language: kannada
+2025-03-28 16:29:20,545 - INFO - Script started.
+2025-03-28 16:29:23,703 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/train.csv for language: malayalam
+2025-03-28 16:33:01,247 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/test.csv for language: hindi
+2025-03-28 16:33:17,539 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/test.csv for language: kannada
+2025-03-28 16:33:30,131 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/test.csv for language: malayalam
+2025-03-28 16:34:15,094 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-28 16:34:33,380 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-28 16:34:47,298 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-28 16:37:16,375 - INFO - Model Accuracy: 75.31%
+2025-03-28 16:37:16,384 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.94      0.75      0.83     18302
+           1       0.40      0.78      0.53      4034
+
+    accuracy                           0.75     22336
+   macro avg       0.67      0.76      0.68     22336
+weighted avg       0.84      0.75      0.78     22336
+
+2025-03-28 16:37:16,395 - INFO - Script finished.
+2025-03-28 16:37:20,687 - INFO - Saved decision boundary plot for hindi at d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\plots\hindi_20250328_163719.png
+2025-03-28 16:37:20,687 - INFO - =========================================
+2025-03-28 16:39:21,084 - INFO - Model Accuracy: 85.22%
+2025-03-28 16:39:21,099 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.99      0.86      0.92     21643
+           1       0.13      0.66      0.22       693
+
+    accuracy                           0.85     22336
+   macro avg       0.56      0.76      0.57     22336
+weighted avg       0.96      0.85      0.90     22336
+
+2025-03-28 16:39:21,115 - INFO - Script finished.
+2025-03-28 16:39:26,546 - INFO - Saved decision boundary plot for kannada at d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\plots\kannada_20250328_163924.png
+2025-03-28 16:39:26,547 - INFO - =========================================
+2025-03-28 16:41:52,178 - INFO - Model Accuracy: 84.11%
+2025-03-28 16:41:52,197 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.99      0.85      0.91     21769
+           1       0.10      0.65      0.17       567
+
+    accuracy                           0.84     22336
+   macro avg       0.54      0.75      0.54     22336
+weighted avg       0.97      0.84      0.89     22336
+
+2025-03-28 16:41:52,213 - INFO - Script finished.
+2025-03-28 16:41:58,184 - INFO - Saved decision boundary plot for malayalam at d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\plots\malayalam_20250328_164155.png
+2025-03-28 16:41:58,184 - INFO - =========================================
+2025-03-28 16:44:38,853 - INFO - Script started.
+2025-03-28 16:44:42,988 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/train.csv for language: marathi
+2025-03-28 16:44:47,991 - INFO - Script started.
+2025-03-28 16:44:51,689 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/train.csv for language: punjabi
+2025-03-28 16:45:02,352 - INFO - Script started.
+2025-03-28 16:45:07,497 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/train.csv for language: tamil
+2025-03-28 16:47:50,125 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/test.csv for language: marathi
+2025-03-28 16:48:04,673 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/test.csv for language: punjabi
+2025-03-28 16:48:32,743 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/test.csv for language: tamil
+2025-03-28 16:48:55,914 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-28 16:49:12,728 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-28 16:49:49,578 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-28 16:52:41,226 - INFO - Model Accuracy: 82.92%
+2025-03-28 16:52:41,242 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.97      0.83      0.90     19776
+           1       0.38      0.79      0.51      2560
+
+    accuracy                           0.83     22336
+   macro avg       0.67      0.81      0.70     22336
+weighted avg       0.90      0.83      0.85     22336
+
+2025-03-28 16:52:41,259 - INFO - Script finished.
+2025-03-28 16:52:46,843 - INFO - Saved decision boundary plot for punjabi at d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\plots\punjabi_20250328_165244.png
+2025-03-28 16:52:46,843 - INFO - =========================================
+2025-03-28 16:53:57,455 - INFO - Model Accuracy: 76.60%
+2025-03-28 16:53:57,464 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.98      0.77      0.86     21291
+           1       0.13      0.70      0.22      1045
+
+    accuracy                           0.77     22336
+   macro avg       0.56      0.73      0.54     22336
+weighted avg       0.94      0.77      0.83     22336
+
+2025-03-28 16:53:57,473 - INFO - Script finished.
+2025-03-28 16:54:01,381 - INFO - Saved decision boundary plot for marathi at d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\plots\marathi_20250328_165400.png
+2025-03-28 16:54:01,381 - INFO - =========================================
+2025-03-28 16:55:30,695 - INFO - Script started.
+2025-03-28 16:55:35,730 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/train.csv for language: telugu
+2025-03-28 16:55:40,208 - INFO - Script started.
+2025-03-28 16:55:44,785 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/train.csv for language: urdu
+2025-03-28 16:56:00,658 - INFO - Model Accuracy: 87.64%
+2025-03-28 16:56:00,677 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.99      0.88      0.93     21829
+           1       0.11      0.59      0.18       507
+
+    accuracy                           0.88     22336
+   macro avg       0.55      0.74      0.56     22336
+weighted avg       0.97      0.88      0.92     22336
+
+2025-03-28 16:56:00,698 - INFO - Script finished.
+2025-03-28 16:56:05,944 - INFO - Saved decision boundary plot for tamil at d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\plots\tamil_20250328_165604.png
+2025-03-28 16:56:05,944 - INFO - =========================================
+2025-03-28 16:59:40,529 - INFO - Script started.
+2025-03-28 17:00:14,000 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/test.csv for language: telugu
+2025-03-28 17:00:31,555 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\../../data/recognition/test.csv for language: urdu
+2025-03-28 17:01:37,943 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-28 17:01:53,872 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-28 17:03:57,629 - INFO - Model Accuracy: 99.98%
+2025-03-28 17:03:57,651 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       1.00      1.00      1.00     22333
+           1       0.33      0.33      0.33         3
+
+    accuracy                           1.00     22336
+   macro avg       0.67      0.67      0.67     22336
+weighted avg       1.00      1.00      1.00     22336
+
+2025-03-28 17:03:57,681 - INFO - Script finished.
+2025-03-28 17:04:03,296 - INFO - Saved decision boundary plot for urdu at d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\plots\urdu_20250328_170401.png
+2025-03-28 17:04:03,297 - INFO - =========================================
+2025-03-28 17:06:53,853 - INFO - Model Accuracy: 85.87%
+2025-03-28 17:06:53,865 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.99      0.86      0.92     21854
+           1       0.10      0.73      0.18       482
+
+    accuracy                           0.86     22336
+   macro avg       0.55      0.79      0.55     22336
+weighted avg       0.97      0.86      0.91     22336
+
+2025-03-28 17:06:53,879 - INFO - Script finished.
+2025-03-28 17:07:00,872 - INFO - Saved decision boundary plot for telugu at d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\plots\telugu_20250328_170658.png
+2025-03-28 17:07:00,872 - INFO - =========================================
