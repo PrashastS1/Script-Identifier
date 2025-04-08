@@ -2,11 +2,9 @@ from torch.utils.data import Dataset
 import torch
 import pandas as pd
 import os
-import cv2
 import numpy as np
 from loguru import logger
-import random
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any
 from .BH_scene_dataset import BHSceneDataset
 from collections import defaultdict
 import json
