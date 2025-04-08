@@ -38,10 +38,6 @@ if __name__ == '__main__':
     # mp.set_start_method("spawn", force=True)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-   
-
-    # Set Random State for Reproducibility
-    # clf = DecisionTreeClassifier(max_depth=10, random_state=42)
 
     # Load Training Data
     train_dataset = BHSceneDataset(
