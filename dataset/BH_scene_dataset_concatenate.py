@@ -147,7 +147,7 @@ class PairedLanguageDataset(Dataset):
         ## Concatenate images
         assert anchor_img.shape == pair_img.shape, "Image channels do not match"
 
-        return torch.cat((anchor_img, pair_img), dim=0), np.int8(1 if same_class else 0)
+        return torch.cat((anchor_img, pair_img), dim=0), np.float32(1 if same_class else 0)
 
 
 # Example usage
