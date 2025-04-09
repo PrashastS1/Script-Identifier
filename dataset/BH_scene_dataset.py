@@ -48,18 +48,6 @@ class BHSceneDataset(Dataset):
         self.backbone = backbone
         self.gap_dim = gap_dim
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.latent_dir = os.path.join(
-            "data",
-            f"latent_{backbone}_{'data_augmentation' if transformation else 'no_data_augmentation'}_{gap_dim}",
-            "train" if train_split else "test"
-        )
-
-        if not os.path.exists(self.latent_dir):
-            os.makedirs(self.latent_dir)
-            logger.info(f"latent_dir not present")
-            logger.info(f"Created directory {self.latent_dir}")
-        else:
-            logger.info(f"latent_dir already present at {self.latent_dir}")
 
         if not self.linear_transform:
             logger.warning("linear_transform is set to False")
@@ -75,9 +63,26 @@ class BHSceneDataset(Dataset):
             logger.warning("gap_dim is not specified but backbone is not vit, setting gap_dim to 1")
             self.gap_dim = 1
 
+        if self.gap_dim and self.backbone in ['vit', 'hog', 'sift']:
+            logger.warning(f"gap_dim does not matter for {self.backbone}")
+            self.gap_dim = 1
+
         if not os.path.exists(self.csv_path):
             raise FileNotFoundError(f"csv file not present at {self.csv_path}")
         
+        self.latent_dir = os.path.join(
+            "data",
+            f"latent_{backbone}_{'data_augmentation' if transformation else 'no_data_augmentation'}_{self.gap_dim}",
+            "train" if train_split else "test"
+        )
+
+        if not os.path.exists(self.latent_dir):
+            os.makedirs(self.latent_dir)
+            logger.info(f"latent_dir not present")
+            logger.info(f"Created directory {self.latent_dir}")
+        else:
+            logger.info(f"latent_dir already present at {self.latent_dir}")
+
         if transformation:
             logger.info("Using albumentations for transformations")
             self.transform = LanguageRecognitionTransforms.get_transforms(
@@ -143,7 +148,10 @@ class BHSceneDataset(Dataset):
         # logger.info(f"total extracted keypoints - {len(sorted_indices)}")
         top_indices = sorted_indices[:self.topk]
         # Select corresponding descriptors
-        selected_descriptors = descriptors[top_indices]
+        if len(top_indices) > 0:
+            selected_descriptors = descriptors[top_indices]
+        else:
+            selected_descriptors = np.array([])
         # Flatten the descriptors and return
         selected_descriptors = selected_descriptors.flatten()
         ## if dim < expected_dim, pad with zeros
@@ -287,12 +295,12 @@ if __name__ == "__main__":
         train_split=False,
         transformation=True,
         backbone='sift',
-        gap_dim=1
+        gap_dim=2
     )
 
-    for i in range(10):
-        img, lang = dataset[i]
-        print(f"Image shape: {img.shape}, Language: {lang}")
-
-    # for i in tqdm(range(len(dataset)), desc="Processing dataset", unit="sample"):
+    # for i in range(10):
     #     img, lang = dataset[i]
+    #     print(f"Image shape: {img.shape}, Language: {lang}")
+
+    for i in tqdm(range(len(dataset)), desc="Processing dataset", unit="sample"):
+        img, lang = dataset[i]
