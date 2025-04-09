@@ -31,12 +31,12 @@ def train(X_train, y_train, config):
 
     # Create the SVM model for 14 classes
     model = svm.SVC(
-        C=config["C"], kernel=config["kernel"], gamma=config["gamma"], decision_function_shape="ovr"
-    )
-
+        C=config["C"], kernel=config["kernel"], gamma=config["gamma"], decision_function_shape="ovr", verbose=True
+    ).fit(X_train, y_train)
+    logger.info(f"Model created, will train now")
     # Train the model
-    model.fit(X_train, y_train)
-
+    
+    logger.info(f"Model trained")
     # Evaluate the model
     train_acc = model.score(X_train, y_train)
     val_acc = model.score(X_val, y_val)
@@ -46,7 +46,7 @@ def train(X_train, y_train, config):
 
     return train_acc, val_acc, model
 # Extract features from the dataset
-def extract_features(dataset,device, batch_size=2048):
+def extract_features(dataset,device, batch_size=64):
     """Extract features from dataset using GPU acceleration."""
     dataloader = DataLoader(
         dataset, batch_size=batch_size, shuffle=False, 
@@ -120,7 +120,9 @@ if __name__ == '__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     X_train, y_train = extract_features(train_dataset,device)
-
+    logger.info(f"Features Extracted")
+    logger.info(f"size of X_train: {X_train.shape}")
+    logger.info(f"size of y_train: {y_train.shape}")
 
     #training with default parameters
     train_acc, val_acc,model= train(X_train, y_train, config["training_params"]["default_params"])
