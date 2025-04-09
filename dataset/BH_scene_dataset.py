@@ -16,7 +16,8 @@ from models.backbones.vit_huge import VIT_huge_backbone
 from .transformations import LanguageRecognitionTransforms
 from tqdm import tqdm
 import json
-
+import multiprocessing as mp
+mp.set_start_method("spawn", force=True)
 
 class BHSceneDataset(Dataset):
     def __init__(
@@ -309,5 +310,33 @@ if __name__ == "__main__":
     #     img, lang = dataset[i]
     #     print(f"Image shape: {img.shape}, Language: {lang}")
 
-    for i in tqdm(range(len(dataset)), desc="Processing dataset", unit="sample"):
-        img, lang = dataset[i]
+    # from torch.utils.data import DataLoader
+    # dataloader = DataLoader(dataset, batch_size=64, shuffle=False)
+
+    # for i, (img, tar) in tqdm(enumerate(dataloader), total=len(dataloader), desc="Processing dataset", unit="sample"):
+    #     # img, lang = dataset[i]
+    #     print(f"Image shape: {img.shape}, Language: {tar}")
+
+
+    from torch.utils.data import DataLoader
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def extract_features(dataset, batch_size=64):
+        """Extract features from dataset using GPU acceleration."""
+        dataloader = DataLoader(
+            dataset, batch_size=batch_size, shuffle=False, 
+            num_workers=4, pin_memory=False
+        )
+
+        X_list, y_list = [], []
+        for batch in tqdm(dataloader, desc="Extracting Features"):
+            X, y = batch  # Unpack tuple
+            X = X.to(device)  # Move to GPU
+
+            X_list.append(X.cpu().numpy())
+            y_list.append(y)
+
+        return np.vstack(X_list), np.concatenate(y_list)
+
+    extract_features(dataset)
+    

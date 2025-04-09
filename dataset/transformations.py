@@ -39,7 +39,13 @@ class LanguageRecognitionTransforms:
                 norm = norms['default']
 
             if backbone_type in ['sift', 'hog']:
-                return A.Compose([...])  # Keep existing code
+                return A.Compose([
+                    A.LongestMaxSize(img_size + 32, interpolation=base_params['interpolation']),
+                    A.PadIfNeeded(min_height=img_size, min_width=img_size, 
+                                border_mode=base_params['border_mode']),
+                    A.CenterCrop(img_size, img_size),
+                    A.Lambda(image=lambda x, **kwargs: torch.from_numpy(x).permute(2,0,1).float())
+                ])
             else:
                 return A.Compose([
                     A.LongestMaxSize(img_size + 32, interpolation=base_params['interpolation']),
