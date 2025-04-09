@@ -2,6 +2,8 @@ from torch.utils.data import Dataset
 import torch
 import pandas as pd
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import cv2
 import numpy as np
 from loguru import logger
@@ -65,6 +67,10 @@ class BHSceneDataset(Dataset):
             self.gap_dim = 1
 
         if self.gap_dim and self.backbone in ['vit', 'vit_huge', 'hog', 'sift']:
+            logger.warning(f"gap_dim does not matter for {self.backbone}")
+            self.gap_dim = 1
+
+        if self.gap_dim and self.backbone in ['vit', 'hog', 'sift']:
             logger.warning(f"gap_dim does not matter for {self.backbone}")
             self.gap_dim = 1
 
