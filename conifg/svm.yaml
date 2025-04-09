@@ -19,9 +19,9 @@ training_params:
   exp_name: "svm_try1"      ## string - name of the experiment , dir - plots/ann/<exp_name>
   run_experiments: True     ## False or True - run experiments for hyperparameter tuning
   hyperparameter_range:     ## only run if run_experiments is True
-    C: [0.1, 1, 10]
+    C: [0.1, 1]
     kernel: ['linear', 'rbf','poly']
-    gamma: ['scale', 'auto','0.1','1','10']
+    gamma: ['scale', 'auto']
     batch_size: [64, 256]
   default_params:
     C: 0.1
