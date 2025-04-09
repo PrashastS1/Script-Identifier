@@ -1,28 +1,30 @@
 train_dataset:
-  root_dir: "data/recognition"
+  root_dir: "../recognition"
   train_split: True 
   transformation: True
-  backbone: null
+  backbone: 'vit'
   gap_dim:  1
 
 test_dataset:
-  root_dir: "data/recognition"
+  root_dir: "../recognition"
   train_split: False
   transformation: True
-  backbone: null
+  backbone: 'vit'
   gap_dim:  1
+
+use_cached_features: true
 
 training_params:
   save_plots: True          ## null or True - save plots and results
   exp_name: "svm_try1"      ## string - name of the experiment , dir - plots/ann/<exp_name>
   run_experiments: True     ## False or True - run experiments for hyperparameter tuning
   hyperparameter_range:     ## only run if run_experiments is True
-    C: [0.1, 1, 10]
+    C: [0.1, 1]
     kernel: ['linear', 'rbf','poly']
-    gamma: ['scale', 'auto','0.1','1','10']
+    gamma: ['scale', 'auto']
     batch_size: [64, 256]
-  default_param:
-    C: 1
+  default_params:
+    C: 0.1
     kernel: 'linear'
     gamma: 'scale'
     batch_size: 64
