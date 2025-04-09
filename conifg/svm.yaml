@@ -21,7 +21,7 @@ training_params:
     kernel: ['linear', 'rbf','poly']
     gamma: ['scale', 'auto','0.1','1','10']
     batch_size: [64, 256]
-  default_param:
+  default_params:
     C: 1
     kernel: 'linear'
     gamma: 'scale'
