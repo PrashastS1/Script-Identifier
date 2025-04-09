@@ -12,6 +12,7 @@ from typing import Dict, Any
 from models.backbones.resnet50 import RESNET_backbone
 from models.backbones.vgg import VGG_backbone
 from models.backbones.vit import VIT_backbone
+from models.backbones.vit_huge import VIT_huge_backbone
 from .transformations import LanguageRecognitionTransforms
 from tqdm import tqdm
 import json
@@ -33,7 +34,7 @@ class BHSceneDataset(Dataset):
         - train_split: bool, whether to use train split or test split
         - Transformation: bool, whether to use albumentations for data augmentation
         #removed (not needed)  - linear_transform: bool, whether to linearize the image before passing to the backbone
-        - backbone: str, backbone to be used for feature extraction ## resnet50, vgg, vit
+        - backbone: str, backbone to be used for feature extraction ## resnet50, vgg, vit, vit_huge, hog, sift
         ###### swin, beit in progress
         - gap_dim: int, dimension of the global average pooled features
 
@@ -61,8 +62,12 @@ class BHSceneDataset(Dataset):
         if self.gap_dim and self.backbone is None:
             logger.warning("gap_dim is specified but backbone is None")
         
-        if not self.gap_dim and self.backbone and self.backbone != 'vit':
-            logger.warning("gap_dim is not specified but backbone is not vit, setting gap_dim to 1")
+        if not self.gap_dim and self.backbone and self.backbone != 'vit' and self.backbone != 'hog' and self.backbone != 'sift' and self.backbone != 'vit_huge':
+            logger.warning(f"gap_dim is not specified but backbone is not {self.backbone}, setting gap_dim to 1")
+            self.gap_dim = 1
+
+        if self.gap_dim and self.backbone in ['vit', 'vit_huge', 'hog', 'sift']:
+            logger.warning(f"gap_dim does not matter for {self.backbone}")
             self.gap_dim = 1
 
         if self.gap_dim and self.backbone in ['vit', 'hog', 'sift']:
@@ -108,6 +113,9 @@ class BHSceneDataset(Dataset):
         elif backbone == 'vit':
             self.backbone = VIT_backbone(pretrained=True).to(self.device)
             logger.info("Using VIT backbone")
+        elif backbone == 'vit_huge':
+            self.backbone = VIT_huge_backbone(pretrained=True).to(self.device)
+            logger.info("Using VIT_huge backbone")
         elif backbone == "sift":
             self.backbone = cv2.SIFT_create()
             self.topk = 64
@@ -116,7 +124,7 @@ class BHSceneDataset(Dataset):
         elif backbone == "hog":
             logger.info(f"Using HOG for feature extraction")
         else:
-            raise ValueError(f"Invalid backbone: {backbone}, valid backbones are: resnet50, vgg, vit")
+            raise ValueError(f"Invalid backbone: {backbone}, use valid backbone - resnet50, vgg, vit, vit_huge, sift, hog")
         
         self.csv = pd.read_csv(self.csv_path, header=0, index_col=None)
 
@@ -259,34 +267,31 @@ class BHSceneDataset(Dataset):
 
 def test_dataset():
     ## test for all possbile value
-    backbone_opt = ['resnet50', 'vgg', 'vit', None]
+    backbone_opt = ['vit', 'vit_huge']
     train_split_opt = [True, False]
     transformation_opt = [True, False]
-    linear_transform_opt = [True, False]
     gap_dim_opt = [1, 2, 3]
 
     for backbone in backbone_opt:
         for train_split in train_split_opt:
             for transformation in transformation_opt:
-                for linear_transform in linear_transform_opt:
-                    for gap_dim in gap_dim_opt:
-                        print(f"Testing with backbone: {backbone}, train_split: {train_split}, transformation: {transformation}, linear_transform: {linear_transform}, gap_dim: {gap_dim}")
-                        dataset = BHSceneDataset(
-                            root_dir="data/recognition",
-                            train_split=train_split,
-                            transformation=transformation,
-                            linear_transform=linear_transform,
-                            backbone=backbone,
-                            gap_dim=gap_dim
-                        )
-                        for i in range(1):
-                            img, lang = dataset[i]
-                            print(f"Image shape: {img.shape}, Language: {lang}")
-                        
-                        print("\n" + "="*50 + "\n")
+                for gap_dim in gap_dim_opt:
+                    print(f"Testing with backbone: {backbone}, train_split: {train_split}, transformation: {transformation}, gap_dim: {gap_dim}")
+                    dataset = BHSceneDataset(
+                        root_dir="data/recognition",
+                        train_split=train_split,
+                        transformation=transformation,
+                        backbone=backbone,
+                        gap_dim=gap_dim
+                    )
+                    for i in range(1):
+                        img, lang = dataset[i]
+                        print(f"Image shape: {img.shape}, Language: {lang}")
+                    
+                    print("\n" + "="*50 + "\n")
 
-                        del dataset
-                        torch.cuda.empty_cache()
+                    del dataset
+                    torch.cuda.empty_cache()
 
 
 if __name__ == "__main__":
@@ -294,9 +299,9 @@ if __name__ == "__main__":
 
     dataset = BHSceneDataset(
         root_dir="data/recognition",
-        train_split=False,
+        train_split=True,
         transformation=True,
-        backbone='sift',
+        backbone='vit_huge',
         gap_dim=2
     )
 
