@@ -40,15 +40,15 @@ def select_lang():
     choice = int(input("\nEnter your choice: "))
     return Lmap.get(choice, None)
 
-logging.basicConfig(filename=logger, level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", filemode="a")
+logging.basicConfig(filename = logger, level = logging.INFO, format = "%(asctime)s - %(levelname)s - %(message)s", filemode = "a")
 logging.info("Script started.")
 
 def load_dataset(csv_path, selected_lang):
-    df = pd.read_csv(csv_path, skiprows=1, header=None, names=["image_path", "annotation", "script"])
+    df = pd.read_csv(csv_path, skiprows = 1, header = None, names = ["image_path", "annotation", "script"])
     x, y = [], []
     logging.info(f"Loading dataset from {csv_path} for language: {selected_lang}")
     
-    for _, row in tqdm(df.iterrows(), total=len(df), desc="Loading Images"):
+    for _, row in tqdm(df.iterrows(), total = len(df), desc = "Loading Images"):
         img_path = os.path.join(data_path, row["image_path"].replace("\\", "/"))  
         if not os.path.exists(img_path):
             logging.warning(f"File not found: {img_path}")
@@ -63,7 +63,7 @@ def load_dataset(csv_path, selected_lang):
             continue
 
         img = cv2.resize(img, (64, 64))
-        hog_features = hog(img, pixels_per_cell=(8, 8), cells_per_block=(2, 2), feature_vector=True)
+        hog_features = hog(img, pixels_per_cell = (8, 8), cells_per_block = (2, 2), feature_vector = True)
         x.append(hog_features)
         y.append(label)
 
