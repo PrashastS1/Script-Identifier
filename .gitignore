@@ -186,3 +186,8 @@ models/.DS_Store
 data/latent*
 models\Logistic\LogRegCNN
 models\Logistic\LogRegHOG
+logs/
+*.log
+models/Logistic/progress/
+data/train
+data/test
