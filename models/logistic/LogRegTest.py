@@ -50,7 +50,7 @@ def run_for_all_languages():
     log_path = setup_logger("logs", exp_name)
     print(f"[INFO] Batch logging to: {log_path}")
 
-    os.makedirs("progress", exist_ok=True)
+    os.makedirs("models/Logistic/progress", exist_ok=True)
     progress_file = os.path.join("models", "Logistic", "progress", f"{exp_name}_completed.txt")
     completed = load_completed(progress_file)
 
@@ -71,26 +71,29 @@ def run_for_all_languages():
         with open(config_path, "w") as f:
             yaml.dump(config, f)
 
-        # Run the test
-        result = subprocess.run(
+        # Run the test with live stdout/stderr (so tqdm shows)
+        process = subprocess.Popen(
             ["python", "-m", "models.Logistic.LogRegLDA"],
-            capture_output=True,
-            text=True
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1  # Line-buffered
         )
 
-        # Log output
-        logging.info(result.stdout)
-        if result.stderr:
-            logging.error(result.stderr)
+        # Stream output live and log
+        with process.stdout:
+            for line in process.stdout:
+                print(line, end='')         # Show in terminal
+                logging.info(line.strip())  # Log to file
 
-        if result.returncode == 0:
+        returncode = process.wait()
+
+        if returncode == 0:
             logging.info(f"[SUCCESS] {lang} completed.")
             save_completed(progress_file, lang)
         else:
             logging.warning(f"[FAILURE] {lang} crashed or exited abnormally.")
             print(f"[ERROR] {lang} failed — check logs.")
-            # Optionally break here if needed:
-            # break
 
 
 if __name__ == "__main__":
