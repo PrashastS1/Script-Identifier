@@ -1,0 +1,15 @@
+logreg_params:
+  save_plots: true
+  exp_name: "logreg_hog_backbone"
+  use_pca: true
+  pca_components: 2
+
+dataset:
+  root_dir: "data/recognition"
+  train_split: true
+  transformation: true
+  backbone: "sift"         # Options: 'hog', 'sift', 'resnet50', 'vgg', 'vit', null
+  gap_dim: 1              # Used for CNN backbones only
+
+target:
+  language: "bengali"       # Train vs. all setup (1-vs-rest)
