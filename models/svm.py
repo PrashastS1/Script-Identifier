@@ -15,6 +15,7 @@ from cuml.svm import SVC
 from cuml.preprocessing import StandardScaler as cuStandardScaler
 import yaml
 import os
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
@@ -89,28 +90,85 @@ def extract_features(dataset, device, batch_size=512):
     # Stack arrays and return
     return np.vstack(X_list), np.concatenate(y_list)
 
+# def plot_results(results):
+#     """Plot the results of the experiments."""
+#     # Convert results to DataFrame
+#     import pandas as pd
+#     df = pd.DataFrame(results)
+
+#     # Plot train accuracy vs C
+#     plt.figure(figsize=(10, 6))
+#     sns.lineplot(data=df, x="C", y="train_acc", hue="kernel", style="gamma")
+#     plt.title("Train Accuracy vs C")
+#     plt.xlabel("C")
+#     plt.ylabel("Train Accuracy")
+#     plt.legend()
+#     plt.show()
+
+#     # Plot validation accuracy vs C
+#     plt.figure(figsize=(10, 6))
+#     sns.lineplot(data=df, x="C", y="val_acc", hue="kernel", style="gamma")
+#     plt.title("Validation Accuracy vs C")
+#     plt.xlabel("C")
+#     plt.ylabel("Validation Accuracy")
+#     plt.legend()
+#     plt.show()
+
 def plot_results(results):
-    """Plot the results of the experiments."""
-    # Convert results to DataFrame
-    import pandas as pd
+    """Enhanced function to visualize experiment results across hyperparameters."""
+    # Convert results list to a DataFrame
     df = pd.DataFrame(results)
 
-    # Plot train accuracy vs C
-    plt.figure(figsize=(10, 6))
-    sns.lineplot(data=df, x="C", y="train_acc", hue="kernel", style="gamma")
-    plt.title("Train Accuracy vs C")
-    plt.xlabel("C")
-    plt.ylabel("Train Accuracy")
-    plt.legend()
+    # --- Line Plots: Metrics vs C for each kernel/gamma combination ---
+    metrics = {
+        "train_acc": "Train Accuracy",
+        "val_acc": "Validation Accuracy",
+        "test_acc": "Test Accuracy",
+        "f1score": "F1 Score"
+    }
+    
+    for metric, label in metrics.items():
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(data=df, x="C", y=metric, hue="kernel", style="gamma",
+                     markers=True, dashes=False)
+        plt.title(f"{label} vs C")
+        plt.xlabel("C")
+        plt.ylabel(label)
+        plt.legend(title="Kernel / Gamma")
+        plt.show()
+
+    # --- Box Plots: Performance by Kernel ---
+    fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+    sns.boxplot(data=df, x="kernel", y="train_acc", ax=axes[0, 0])
+    axes[0, 0].set_title("Train Accuracy by Kernel")
+    
+    sns.boxplot(data=df, x="kernel", y="val_acc", ax=axes[0, 1])
+    axes[0, 1].set_title("Validation Accuracy by Kernel")
+    
+    sns.boxplot(data=df, x="kernel", y="test_acc", ax=axes[1, 0])
+    axes[1, 0].set_title("Test Accuracy by Kernel")
+    
+    sns.boxplot(data=df, x="kernel", y="f1score", ax=axes[1, 1])
+    axes[1, 1].set_title("F1 Score by Kernel")
+    
+    plt.tight_layout()
     plt.show()
 
-    # Plot validation accuracy vs C
-    plt.figure(figsize=(10, 6))
-    sns.lineplot(data=df, x="C", y="val_acc", hue="kernel", style="gamma")
-    plt.title("Validation Accuracy vs C")
-    plt.xlabel("C")
-    plt.ylabel("Validation Accuracy")
-    plt.legend()
+    # --- Box Plots: Performance by Gamma ---
+    fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+    sns.boxplot(data=df, x="gamma", y="train_acc", ax=axes[0, 0])
+    axes[0, 0].set_title("Train Accuracy by Gamma")
+    
+    sns.boxplot(data=df, x="gamma", y="val_acc", ax=axes[0, 1])
+    axes[0, 1].set_title("Validation Accuracy by Gamma")
+    
+    sns.boxplot(data=df, x="gamma", y="test_acc", ax=axes[1, 0])
+    axes[1, 0].set_title("Test Accuracy by Gamma")
+    
+    sns.boxplot(data=df, x="gamma", y="f1score", ax=axes[1, 1])
+    axes[1, 1].set_title("F1 Score by Gamma")
+    
+    plt.tight_layout()
     plt.show()
 
 if __name__ == '__main__':
