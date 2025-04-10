@@ -30,6 +30,14 @@ class LanguageRecognitionTransforms:
 
         # Test phase transformations
         if phase == 'test':
+            # Updated normalization logic
+            if backbone_type in ['resnet50', 'vgg']:
+                norm = norms['imagenet']
+            elif backbone_type in ['vit', 'vit_huge']:
+                norm = norms['vit']
+            else:
+                norm = norms['default']
+
             if backbone_type in ['sift', 'hog']:
                 return A.Compose([
                     A.LongestMaxSize(img_size + 32, interpolation=base_params['interpolation']),
@@ -39,7 +47,6 @@ class LanguageRecognitionTransforms:
                     A.Lambda(image=lambda x, **kwargs: torch.from_numpy(x).permute(2,0,1).float())
                 ])
             else:
-                norm = norms['imagenet' if backbone_type in ['resnet50', 'vgg', 'vit'] else 'default']
                 return A.Compose([
                     A.LongestMaxSize(img_size + 32, interpolation=base_params['interpolation']),
                     A.PadIfNeeded(min_height=img_size, min_width=img_size, 
@@ -116,7 +123,7 @@ class LanguageRecognitionTransforms:
                 ToTensorV2()
             ])
 
-        elif backbone_type in ['vit']:
+        elif backbone_type in ['vit', 'vit_huge']:
             transforms.extend([
                 A.RandomResizedCrop((img_size, img_size), scale=(0.7, 1), ratio=(0.8, 1.2)),
                 A.HorizontalFlip(p=0.3),

@@ -46,7 +46,7 @@ class PairedLanguageDataset(Dataset):
         self.base_dataset = BHSceneDataset(
             root_dir=self.root_dir,
             train_split=self.train_split,
-            transformation=False,
+            transformation=self.transformation,
             backbone=self.backbone_name,
             gap_dim=self.gap_dim
         )

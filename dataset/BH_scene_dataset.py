@@ -12,10 +12,12 @@ from typing import Dict, Any
 from models.backbones.resnet50 import RESNET_backbone
 from models.backbones.vgg import VGG_backbone
 from models.backbones.vit import VIT_backbone
+from models.backbones.vit_huge import VIT_huge_backbone
 from .transformations import LanguageRecognitionTransforms
 from tqdm import tqdm
 import json
-
+import multiprocessing as mp
+mp.set_start_method("spawn", force=True)
 
 class BHSceneDataset(Dataset):
     def __init__(
@@ -33,7 +35,7 @@ class BHSceneDataset(Dataset):
         - train_split: bool, whether to use train split or test split
         - Transformation: bool, whether to use albumentations for data augmentation
         #removed (not needed)  - linear_transform: bool, whether to linearize the image before passing to the backbone
-        - backbone: str, backbone to be used for feature extraction ## resnet50, vgg, vit
+        - backbone: str, backbone to be used for feature extraction ## resnet50, vgg, vit, vit_huge, hog, sift
         ###### swin, beit in progress
         - gap_dim: int, dimension of the global average pooled features
 
@@ -50,18 +52,6 @@ class BHSceneDataset(Dataset):
         self.backbone = backbone
         self.gap_dim = gap_dim
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.latent_dir = os.path.join(
-            "data",
-            f"latent_{backbone}_{'data_augmentation' if transformation else 'no_data_augmentation'}_{gap_dim}",
-            "train" if train_split else "test"
-        )
-
-        if not os.path.exists(self.latent_dir):
-            os.makedirs(self.latent_dir)
-            logger.info(f"latent_dir not present")
-            logger.info(f"Created directory {self.latent_dir}")
-        else:
-            logger.info(f"latent_dir already present at {self.latent_dir}")
 
         if not self.linear_transform:
             logger.warning("linear_transform is set to False")
@@ -73,13 +63,34 @@ class BHSceneDataset(Dataset):
         if self.gap_dim and self.backbone is None:
             logger.warning("gap_dim is specified but backbone is None")
         
-        if not self.gap_dim and self.backbone and self.backbone != 'vit':
-            logger.warning("gap_dim is not specified but backbone is not vit, setting gap_dim to 1")
+        if not self.gap_dim and self.backbone and self.backbone != 'vit' and self.backbone != 'hog' and self.backbone != 'sift' and self.backbone != 'vit_huge':
+            logger.warning(f"gap_dim is not specified but backbone is not {self.backbone}, setting gap_dim to 1")
+            self.gap_dim = 1
+
+        if self.gap_dim and self.backbone in ['vit', 'vit_huge', 'hog', 'sift']:
+            logger.warning(f"gap_dim does not matter for {self.backbone}")
+            self.gap_dim = 1
+
+        if self.gap_dim and self.backbone in ['vit', 'hog', 'sift']:
+            logger.warning(f"gap_dim does not matter for {self.backbone}")
             self.gap_dim = 1
 
         if not os.path.exists(self.csv_path):
             raise FileNotFoundError(f"csv file not present at {self.csv_path}")
         
+        self.latent_dir = os.path.join(
+            "data",
+            f"latent_{backbone}_{'data_augmentation' if transformation else 'no_data_augmentation'}_{self.gap_dim}",
+            "train" if train_split else "test"
+        )
+
+        if not os.path.exists(self.latent_dir):
+            os.makedirs(self.latent_dir)
+            logger.info(f"latent_dir not present")
+            logger.info(f"Created directory {self.latent_dir}")
+        else:
+            logger.info(f"latent_dir already present at {self.latent_dir}")
+
         if transformation:
             logger.info("Using albumentations for transformations")
             self.transform = LanguageRecognitionTransforms.get_transforms(
@@ -103,6 +114,9 @@ class BHSceneDataset(Dataset):
         elif backbone == 'vit':
             self.backbone = VIT_backbone(pretrained=True).to(self.device)
             logger.info("Using VIT backbone")
+        elif backbone == 'vit_huge':
+            self.backbone = VIT_huge_backbone(pretrained=True).to(self.device)
+            logger.info("Using VIT_huge backbone")
         elif backbone == "sift":
             self.backbone = cv2.SIFT_create()
             self.topk = 64
@@ -111,7 +125,7 @@ class BHSceneDataset(Dataset):
         elif backbone == "hog":
             logger.info(f"Using HOG for feature extraction")
         else:
-            raise ValueError(f"Invalid backbone: {backbone}, valid backbones are: resnet50, vgg, vit")
+            raise ValueError(f"Invalid backbone: {backbone}, use valid backbone - resnet50, vgg, vit, vit_huge, sift, hog")
         
         self.csv = pd.read_csv(self.csv_path, header=0, index_col=None)
 
@@ -145,7 +159,10 @@ class BHSceneDataset(Dataset):
         # logger.info(f"total extracted keypoints - {len(sorted_indices)}")
         top_indices = sorted_indices[:self.topk]
         # Select corresponding descriptors
-        selected_descriptors = descriptors[top_indices]
+        if len(top_indices) > 0:
+            selected_descriptors = descriptors[top_indices]
+        else:
+            selected_descriptors = np.array([])
         # Flatten the descriptors and return
         selected_descriptors = selected_descriptors.flatten()
         ## if dim < expected_dim, pad with zeros
@@ -251,34 +268,31 @@ class BHSceneDataset(Dataset):
 
 def test_dataset():
     ## test for all possbile value
-    backbone_opt = ['resnet50', 'vgg', 'vit', None]
+    backbone_opt = ['vit', 'vit_huge']
     train_split_opt = [True, False]
     transformation_opt = [True, False]
-    linear_transform_opt = [True, False]
     gap_dim_opt = [1, 2, 3]
 
     for backbone in backbone_opt:
         for train_split in train_split_opt:
             for transformation in transformation_opt:
-                for linear_transform in linear_transform_opt:
-                    for gap_dim in gap_dim_opt:
-                        print(f"Testing with backbone: {backbone}, train_split: {train_split}, transformation: {transformation}, linear_transform: {linear_transform}, gap_dim: {gap_dim}")
-                        dataset = BHSceneDataset(
-                            root_dir="data/recognition",
-                            train_split=train_split,
-                            transformation=transformation,
-                            linear_transform=linear_transform,
-                            backbone=backbone,
-                            gap_dim=gap_dim
-                        )
-                        for i in range(1):
-                            img, lang = dataset[i]
-                            print(f"Image shape: {img.shape}, Language: {lang}")
-                        
-                        print("\n" + "="*50 + "\n")
+                for gap_dim in gap_dim_opt:
+                    print(f"Testing with backbone: {backbone}, train_split: {train_split}, transformation: {transformation}, gap_dim: {gap_dim}")
+                    dataset = BHSceneDataset(
+                        root_dir="data/recognition",
+                        train_split=train_split,
+                        transformation=transformation,
+                        backbone=backbone,
+                        gap_dim=gap_dim
+                    )
+                    for i in range(1):
+                        img, lang = dataset[i]
+                        print(f"Image shape: {img.shape}, Language: {lang}")
+                    
+                    print("\n" + "="*50 + "\n")
 
-                        del dataset
-                        torch.cuda.empty_cache()
+                    del dataset
+                    torch.cuda.empty_cache()
 
 
 if __name__ == "__main__":
@@ -286,15 +300,43 @@ if __name__ == "__main__":
 
     dataset = BHSceneDataset(
         root_dir="data/recognition",
-        train_split=False,
+        train_split=True,
         transformation=True,
-        backbone='sift',
-        gap_dim=1
+        backbone='vit_huge',
+        gap_dim=2
     )
 
-    for i in range(10):
-        img, lang = dataset[i]
-        print(f"Image shape: {img.shape}, Language: {lang}")
-
-    # for i in tqdm(range(len(dataset)), desc="Processing dataset", unit="sample"):
+    # for i in range(10):
     #     img, lang = dataset[i]
+    #     print(f"Image shape: {img.shape}, Language: {lang}")
+
+    # from torch.utils.data import DataLoader
+    # dataloader = DataLoader(dataset, batch_size=64, shuffle=False)
+
+    # for i, (img, tar) in tqdm(enumerate(dataloader), total=len(dataloader), desc="Processing dataset", unit="sample"):
+    #     # img, lang = dataset[i]
+    #     print(f"Image shape: {img.shape}, Language: {tar}")
+
+
+    from torch.utils.data import DataLoader
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def extract_features(dataset, batch_size=64):
+        """Extract features from dataset using GPU acceleration."""
+        dataloader = DataLoader(
+            dataset, batch_size=batch_size, shuffle=False, 
+            num_workers=4, pin_memory=False
+        )
+
+        X_list, y_list = [], []
+        for batch in tqdm(dataloader, desc="Extracting Features"):
+            X, y = batch  # Unpack tuple
+            X = X.to(device)  # Move to GPU
+
+            X_list.append(X.cpu().numpy())
+            y_list.append(y)
+
+        return np.vstack(X_list), np.concatenate(y_list)
+
+    extract_features(dataset)
+    

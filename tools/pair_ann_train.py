@@ -9,6 +9,7 @@ from utils.ann_plot_utils import (
 from dataset.BH_scene_dataset_concatenate import PairedLanguageDataset
 from models.pair_ann import PAIR_ANN
 from typing_extensions import List, Dict, Tuple
+from loguru import logger
 import numpy as np
 from tqdm import tqdm
 import json
@@ -59,9 +60,8 @@ def train_model(
         all_preds = []
         all_targets = []
         
-        for data, labels in tqdm(train_loader):
+        for data, labels in (pbar := tqdm(train_loader)):
             data, labels = data.to(device), labels.to(device)
-            print(f"Data shape: {data.shape}, Labels shape: {labels.shape}")
             labels = labels.unsqueeze(1)   ## squeeze the labels
             
             outputs = model(data)
@@ -72,6 +72,8 @@ def train_model(
             optimizer.step()
             
             predicted = (outputs > 0.5).float()
+
+            pbar.set_postfix({"loss": loss.item()})
             
             all_preds.append(predicted.cpu().numpy())
             all_targets.append(labels.cpu().numpy())
@@ -88,11 +90,11 @@ def train_model(
 
         
         ## print train and test result
-        print(f"Epoch: {epoch}, Train Accuracy: {train_acc}, Test Accuracy: {test_acc}")
+        logger.debug(f"Epoch: {epoch}, Train Accuracy: {train_acc}, Test Accuracy: {test_acc}")
 
     
-    print(f"Final Train Accuracy: {results[-1]['train_accuracy']}, Final Test Accuracy: {results[-1]['test_accuracy']}")
-    print(f"Final Train F1: {results[-1]['train_f1']}, Final Test F1: {results[-1]['test_f1']}")
+    logger.info(f"Final Train Accuracy: {results[-1]['train_accuracy']}, Final Test Accuracy: {results[-1]['test_accuracy']}")
+    logger.info(f"Final Train F1: {results[-1]['train_f1']}, Final Test F1: {results[-1]['test_f1']}")
     
     return model, optimizer, results
 
@@ -171,7 +173,7 @@ def main():
         test_loader = DataLoader(test_dataset, batch_size=default_param["batch_size"], shuffle=True)
         ## train the model
         model, optimizer, result = train_model(model, train_loader, test_loader, optimizer, device, default_param["num_epochs"])
-        print(result)
+        logger.info(result)
         
 
 if __name__=="__main__":
