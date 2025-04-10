@@ -1,32 +1,39 @@
 import numpy as np
 from collections import Counter
 import torch
-from sklearn import datasets
+import cupy as cp  # For GPU array operations
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 from loguru import logger
 from dataset.BH_scene_dataset import BHSceneDataset
 from torch.utils.data import DataLoader
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder
 import torch.multiprocessing as mp
 from tqdm import tqdm
-from sklearn import svm
+# Import cuML SVC instead of sklearn's SVM
+from cuml.svm import SVC
+from cuml.preprocessing import StandardScaler as cuStandardScaler
 import yaml
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
 from google.colab import files
+import pickle
 
 def train(X_train, y_train, config):
-    """Run the experiment using the given configuration."""
+    """Run the experiment using the given configuration with cuML SVC."""
     # Split the dataset
     X_train, X_val, y_train, y_val = train_test_split(
         X_train, y_train, test_size=0.2, stratify=y_train
     )
     
-    # Add feature scaling
-    scaler = StandardScaler()
+    # Convert to float32 for GPU efficiency
+    X_train = X_train.astype('float32')
+    X_val = X_val.astype('float32')
+    
+    # Use cuML's StandardScaler for GPU acceleration
+    scaler = cuStandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_val = scaler.transform(X_val)
 
@@ -34,17 +41,22 @@ def train(X_train, y_train, config):
     logger.info(f"Kernel: {config['kernel']}")
     logger.info(f"Gamma: {config['gamma']}")
 
-    # Create the SVM model with convergence controls
-    model = svm.SVC(
+    # Create the SVM model with cuML's SVC
+    model = SVC(
         C=config["C"], 
         kernel=config["kernel"],
         gamma=config["gamma"],
-        decision_function_shape="ovr", 
-        verbose=True,
-        max_iter=10000,  # Prevent infinite training
-        tol=0.01,       # Relax convergence criteria
-        class_weight='balanced'  # Handle class imbalance
-    ).fit(X_train, y_train)
+        probability=False,  # Disable for faster training
+        cache_size=2048,    # Larger cache for GPU
+        max_iter=10000,     # Prevent infinite training
+        tol=0.01,           # Relaxed tolerance
+        class_weight='balanced',
+        output_type='numpy'  # For compatibility with sklearn metrics
+    )
+    
+    # Fit the model
+    model.fit(X_train, y_train)
+    logger.info(f"Model trained")
     
     # Evaluate the model
     train_acc = model.score(X_train, y_train)
@@ -53,25 +65,28 @@ def train(X_train, y_train, config):
     logger.info(f"Train Accuracy: {train_acc:.2f}")
     logger.info(f"Validation Accuracy: {val_acc:.2f}")
 
-    return train_acc, val_acc, model
+    return train_acc, val_acc, model, scaler
 
-def extract_features(dataset, device, batch_size=1024):  # Increased batch size
-    """Extract features from dataset using GPU acceleration."""
+def extract_features(dataset, device, batch_size=512):
+    """Extract features with optimized memory handling."""
     dataloader = DataLoader(
         dataset, batch_size=batch_size, shuffle=False, 
-        num_workers=4,         # Increased workers
-        pin_memory=True        # Enable pinned memory
+        num_workers=2,
+        pin_memory=False,    # Enable pinned memory for faster GPU transfer
+        persistent_workers=True
     )
 
     X_list, y_list = [], []
     for batch in tqdm(dataloader, desc="Extracting Features"):
-        X, y = batch  # Unpack tuple
+        X, y = batch
         X = X.to(device, non_blocking=True)  # Async transfer
-        
-        # Use float32 to reduce memory usage
+        logger.info(f"the devive being used before feature extraction is: {device}")
+      
+        # Convert to float32 immediately to save memory
         X_list.append(X.cpu().float().numpy())
         y_list.append(y.numpy())
 
+    # Stack arrays and return
     return np.vstack(X_list), np.concatenate(y_list)
 
 def plot_results(results):
@@ -113,25 +128,30 @@ if __name__ == '__main__':
     label_encoder = LabelEncoder()
     label_encoder.fit(languages)
 
-    # Load Configuration (fixed config path typo)
+    # Load Configuration
     with open("./conifg/svm.yaml") as f:
         config = yaml.safe_load(f)
 
     # Load training dataset
     train_dataset = BHSceneDataset(**config["train_dataset"])
     device = "cuda" if torch.cuda.is_available() else "cpu"
-
+    logger.info(f"the devive being used before feature extraction is: {device}")
     # Feature extraction with caching
     cache_path = "train_features.pkl"
     if config.get("use_cached", False) and os.path.exists(cache_path):
         logger.info("Loading cached features...")
         X_train, y_train = joblib.load(cache_path)
+        # Convert to float32 for cuML
+        X_train = X_train.astype('float32')
     else:
         logger.info("Extracting features...")
         X_train, y_train = extract_features(train_dataset, device)
+        # Save as float32
+        X_train = X_train.astype('float32')
         joblib.dump((X_train, y_train), cache_path)
 
     # Encode labels
+    label_encoder.fit(y_train)  # Critical change
     y_train = label_encoder.transform(y_train)
     
     logger.info(f"Features Extracted")
@@ -139,24 +159,32 @@ if __name__ == '__main__':
     logger.info(f"Size of y_train: {y_train.shape}")
 
     # Training with default parameters
-    train_acc, val_acc, model = train(X_train, y_train, config["training_params"]["default_params"])
+    train_acc, val_acc, model, scaler = train(X_train, y_train, config["training_params"]["default_params"])
 
     # Testing with default parameters
     test_dataset = BHSceneDataset(**config["test_dataset"])
     X_test, y_test = extract_features(test_dataset, device)
-    y_test = label_encoder.transform(y_test)  # Encode test labels
+    X_test = X_test.astype('float32')  # Convert to float32
+    y_test = label_encoder.transform(y_test)
 
     # Scale test features using training scaler
-    scaler = StandardScaler().fit(X_train)
     X_test_scaled = scaler.transform(X_test)
     
     y_pred = model.predict(X_test_scaled)
     test_acc = model.score(X_test_scaled, y_test)
+    
     f1score = f1_score(y_test, y_pred, average='weighted')
+    print("y_test->")
+    print(y_test)
+    print("y_pred->")
+    print(y_pred)
+    
     
     logger.info(f"F1 Score: {f1score:.2f}")
     logger.info(f"Test Accuracy: {test_acc:.2f}")
-
+    # Save the model
+    with open(f"svm_model_C{C}_kernel{kernel}_gamma{gamma}.pkl", "wb") as f:
+        pickle.dump(model, f)
     results = []
     hyperparameters = config["training_params"]["hyperparameter_range"]
 
@@ -170,13 +198,17 @@ if __name__ == '__main__':
                     "gamma": gamma
                 }
                 try:
-                    train_acc, val_acc, model = train(X_train, y_train, current_config)
+                    train_acc, val_acc, model, scaler = train(X_train, y_train, current_config)
                     
-                    # Test evaluation with scaled features
+                    # Scale test features using this model's scaler
+                    X_test_scaled = scaler.transform(X_test)
+                    
+                    # Test evaluation
                     test_acc = model.score(X_test_scaled, y_test)
                     y_pred = model.predict(X_test_scaled)
                     f1score = f1_score(y_test, y_pred, average='weighted')
-                    
+                    logger.info(f"F1 Score: {f1score:.2f}")
+                    logger.info(f"Test Accuracy: {test_acc:.2f}")
                     results.append({
                         "C": C,
                         "kernel": kernel,
@@ -186,19 +218,25 @@ if __name__ == '__main__':
                         "test_acc": test_acc,
                         "f1score": f1score
                     })
+                    with open(f"svm_model_C{C}_kernel{kernel}_gamma{gamma}.pkl", "wb") as f:
+                        pickle.dump(model, f)
+                    
                 except Exception as e:
                     logger.error(f"Failed for {current_config}: {str(e)}")
 
+    print(results)
     # Plotting and results
     plot_results(results)
     
     # Save best model
-    best_model = max(results, key=lambda x: x["test_acc"])
-    best_model_params = {
-        "C": best_model["C"],
-        "kernel": best_model["kernel"],
-        "gamma": best_model["gamma"]
-    }
-    logger.info(f"Best Model: {best_model_params}")
-    logger.info(f"Best Test Accuracy: {best_model['test_acc']:.2f}")
-    joblib.dump(model, "best_svm_model.joblib")
+    if results:
+        best_model = max(results, key=lambda x: x["test_acc"])
+        best_model_params = {
+            "C": best_model["C"],
+            "kernel": best_model["kernel"],
+            "gamma": best_model["gamma"]
+        }
+        logger.info(f"Best Model: {best_model_params}")
+        logger.info(f"Best Test Accuracy: {best_model['test_acc']:.2f}")
+        logger.info(f"F1_Score: {best_model['f1score']:.2f}")
+        files.download(f"svm_model_C{ best_model["C"]}_kernel{best_model["kernel"]}_gamma{best_model["gamma"]}.pkl")
