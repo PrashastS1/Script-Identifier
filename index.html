@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Script-Identifier</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f7f9fc;
+      color: #333;
+      line-height: 1.6;
+    }
+    header {
+      background: #004aad;
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+    }
+    section {
+      padding: 2rem 1rem;
+      max-width: 900px;
+      margin: auto;
+    }
+    h2 {
+      color: #004aad;
+      border-bottom: 2px solid #004aad;
+      padding-bottom: 0.25rem;
+    }
+    code {
+      background-color: #e0e0e0;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    img {
+      max-width: 100%;
+      margin: 1rem 0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+    footer {
+      background-color: #f1f1f1;
+      padding: 1rem;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .code-block {
+      background: #f0f0f0;
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Script-Identifier</h1>
+    <p>Scene Text Script Classification using ML & Deep Learning Backbones</p>
+  </header>
+
+  <section>
+    <h2>🧠 About the Project</h2>
+    <p><strong>Script-Identifier</strong> is a machine learning pipeline designed to classify the script of cropped text images from real-world scene text datasets. We support traditional and deep learning features with a flexible backbone architecture.</p>
+
+    <ul>
+      <li>🔍 Logistic Regression classifier</li>
+      <li>📐 Feature extraction using HOG, SIFT, VGG, ResNet, ViT</li>
+      <li>🧪 Dimensionality Reduction via PCA and LDA</li>
+      <li>📊 Supports Binary and Multiclass classification</li>
+      <li>🗂 Dataset: <a href="https://github.com/Bhashini-IITJ/BharatSceneTextDataset" target="_blank">Bharat Scene Text Dataset</a></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>⚙️ How It Works</h2>
+    <p>Features are extracted using the selected backbone and stored as latent representations. These are then used to train a logistic regression classifier.</p>
+
+    <p class="code-block">
+# Example YAML config (logreg.yaml)
+logreg_params:
+  use_pca: true
+  use_lda: false
+  exp_name: logreg_hog
+  lda_mode: binary
+
+dataset:
+  root_dir: data/recognition
+  backbone: hog
+  transformation: true
+
+target:
+  language: hindi
+    </p>
+  </section>
+
+  <section>
+    <h2>📈 Sample Visualization</h2>
+    <p>Decision boundary of logistic regression using HOG + PCA:</p>
+    <img src="assets/sample_plot.png" alt="Decision Boundary Plot" />
+  </section>
+
+  <section>
+    <h2>📁 Project Structure</h2>
+    <p>The project follows a modular structure:</p>
+    <ul>
+      <li><code>dataset/</code> – Custom PyTorch datasets with feature backbones</li>
+      <li><code>models/</code> – Logistic regression, ANN, backbone modules</li>
+      <li><code>tools/</code> – Training scripts for various models</li>
+      <li><code>config/</code> – YAML config files</li>
+      <li><code>plots/</code> – Output visualizations</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>🚀 Running the Project</h2>
+    <p>Make sure you're in the project root directory and run:</p>
+    <p class="code-block">
+# For Logistic Regression with backbone
+python -m models.Logistic.LogBackBone
+
+# For ANN training
+python -m tools.ann_train
+    </p>
+  </section>
+
+  <section>
+    <h2>📚 Credits</h2>
+    <p>Dataset: <a href="https://github.com/Bhashini-IITJ/BharatSceneTextDataset" target="_blank">Bhashini Bharat Scene Text</a></p>
+    <p>Developed as part of a PRML course project</p>
+  </section>
+
+  <footer>
+    Made with ❤️ using Python, PyTorch, Scikit-Learn, and OpenCV
+  </footer>
+</body>
+</html>
