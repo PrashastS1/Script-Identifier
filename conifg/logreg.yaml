@@ -8,7 +8,7 @@ dataset:
   root_dir: "data/recognition"
   train_split: true
   transformation: true
-  backbone: "sift"         # Options: 'hog', 'sift', 'resnet50', 'vgg', 'vit', null
+  backbone: "vit"         # Options: 'hog', 'sift', 'resnet50', 'vgg', 'vit', null
   gap_dim: 1              # Used for CNN backbones only
 
 target:
