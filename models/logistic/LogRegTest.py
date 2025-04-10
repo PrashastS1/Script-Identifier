@@ -17,15 +17,28 @@ def setup_logger(log_dir: str, exp_name: str):
     return log_path
 
 
+def load_completed(progress_file):
+    if not os.path.exists(progress_file):
+        return set()
+    with open(progress_file, 'r') as f:
+        return set(line.strip() for line in f if line.strip())
+
+
+def save_completed(progress_file, language):
+    with open(progress_file, 'a') as f:
+        f.write(f"{language}\n")
+
+
 def run_for_all_languages():
-    # Load config
     config_path = "conifg/logreg.yaml"
+
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
 
     dataset_args = config["dataset"]
     logreg_cfg = config["logreg_params"]
     exp_name = logreg_cfg.get("exp_name", "logreg_batch")
+    backbone = dataset_args.get("backbone", "unknown")
 
     # Load language mapping
     with open('./dataset/language_encode.json') as f:
@@ -33,24 +46,32 @@ def run_for_all_languages():
 
     languages = list(lang_map.keys())
 
-    # Setup batch logger
+    # Setup logging and progress tracking
     log_path = setup_logger("logs", exp_name)
     print(f"[INFO] Batch logging to: {log_path}")
 
-    logging.info(f"Backbone: {dataset_args.get('backbone', 'unknown')}")
-    logging.info("Experiment Type: PCA + LDA (multiclass)")
-    logging.info(f"Languages to evaluate: {languages}")
+    os.makedirs("progress", exist_ok=True)
+    progress_file = os.path.join("models", "Logistic", "progress", f"{exp_name}_completed.txt")
+    completed = load_completed(progress_file)
+
+    logging.info(f"Backbone: {backbone}")
+    logging.info(f"Running PCA + LDA (multiclass) for {len(languages)} languages")
+    logging.info(f"Already completed: {sorted(list(completed))}")
 
     for lang in languages:
-        # Update the YAML config
+        if lang in completed:
+            print(f"[SKIP] {lang} already completed.")
+            continue
+
+        print(f"\n[INFO] Running for language: {lang}")
+        logging.info(f"----- Running for language: {lang} -----")
+
+        # Update config for this run
         config["target"]["language"] = lang
         with open(config_path, "w") as f:
             yaml.dump(config, f)
 
-        print(f"\n[INFO] Running experiment for language: {lang}")
-        logging.info(f"----- Running for language: {lang} -----")
-
-        # Call LogRegLDA.py as a module
+        # Run the test
         result = subprocess.run(
             ["python", "-m", "models.Logistic.LogRegLDA"],
             capture_output=True,
@@ -59,12 +80,17 @@ def run_for_all_languages():
 
         # Log output
         logging.info(result.stdout)
-        logging.error(result.stderr if result.stderr else "No stderr")
+        if result.stderr:
+            logging.error(result.stderr)
 
-        if result.returncode != 0:
-            logging.warning(f"[WARNING] Run failed for language: {lang}")
+        if result.returncode == 0:
+            logging.info(f"[SUCCESS] {lang} completed.")
+            save_completed(progress_file, lang)
         else:
-            logging.info(f"[INFO] Finished run for language: {lang}")
+            logging.warning(f"[FAILURE] {lang} crashed or exited abnormally.")
+            print(f"[ERROR] {lang} failed — check logs.")
+            # Optionally break here if needed:
+            # break
 
 
 if __name__ == "__main__":
