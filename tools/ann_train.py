@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch.optim.lr_scheduler import ReduceLROnPlateau 
 from torch.utils.data import DataLoader
 from sklearn.metrics import (
     accuracy_score, 
@@ -31,6 +32,7 @@ def test(
     correct = 0     ## correct prediction
     all_preds = []  ## all predictions
     all_targets = []    ## all targets
+    all_logits = []
     
     with torch.no_grad():       ## no gradient
         for data, target in test_loader:
@@ -39,6 +41,8 @@ def test(
             preds = output.argmax(dim=1)    ## get prediction
             correct += preds.eq(target).sum().item()    ## get correct prediction
             
+            all_logits.append(output)
+            
             all_preds.append(preds.cpu().numpy())   ## save the prediction
             all_targets.append(target.cpu().numpy())    ## save the target
     
@@ -46,10 +50,14 @@ def test(
     
     all_preds = np.concatenate(all_preds)       ## concatenate all the predictions
     all_targets = np.concatenate(all_targets)   ## concatenate all the targets
+    all_logits = torch.concatenate(all_logits).to('cpu')
+
+    loss = nn.CrossEntropyLoss()
+    test_loss = loss(all_logits, torch.from_numpy(all_targets)).item()
 
     f1 = f1_score(all_targets, all_preds, average="macro")  ## get f1 score
     model.train()   ## set the model to train mode
-    return accuracy, f1
+    return accuracy, f1, test_loss
 
 
 def train(
@@ -62,12 +70,15 @@ def train(
     ) -> Tuple[nn.Module, torch.optim.Optimizer, List[Dict[str, float]]]:
     # return the result of the training accuracy and f1 score
 
+    lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=1, verbose=True)
+
     results =[]
     loss_fn = nn.CrossEntropyLoss()
     for epoch in range(epochs):     ## for each epoch
         model.train()
         all_preds = []
         all_targets = []
+        all_logits = []
         for data, target in tqdm(train_loader):
             data, target = data.to(device), target.to(device)
             output = model(data)        ## get logit
@@ -76,20 +87,35 @@ def train(
             loss.backward()    ## backpropagation
             optimizer.step()    ## update the weight
             preds = output.argmax(dim=1)
+            all_logits.append(output)
             all_preds.append(preds.cpu().numpy())
             all_targets.append(target.cpu().numpy())
 
         # train_acc, train_f1 = test(model, train_loader, device)   ## get train accuracy and f1 score
         train_acc = accuracy_score(np.concatenate(all_targets), np.concatenate(all_preds)) * 100
         train_f1 = f1_score(np.concatenate(all_targets), np.concatenate(all_preds), average="macro")
-        test_acc, test_f1 = test(model, test_loader, device)    ## get test accuracy and f1 score
+
+        with torch.no_grad():
+            test_acc, test_f1, test_loss = test(model, test_loader, device)    ## get test accuracy and f1 score
+        
+        all_preds = np.concatenate(all_preds)
+        all_targets = np.concatenate(all_targets)
+
+        with torch.no_grad():
+            all_logits = torch.concatenate(all_logits).to('cpu')
+            train_loss = loss_fn(all_logits, torch.from_numpy(all_targets)).item()
+
+        lr_scheduler.step(test_loss)   ## step the learning rate scheduler
+        
         ## save the result
         results.append( 
             {
                 "train_accuracy": train_acc, 
                 "train_f1": train_f1, 
                 "test_accuracy": test_acc, 
-                "test_f1": test_f1
+                "test_f1": test_f1,
+                "train_loss": train_loss,
+                "test_loss": test_loss,
             }
         )       ## save the result
 
@@ -126,6 +152,21 @@ def run_experiment(
             test_loader = DataLoader(test_dataset, batch_size=512, shuffle=False)
             model, optimizer, result = train(model, train_loader, test_loader, optimizer, device, epochs)
             ## save the result
+            model_name = "{}_{}_{}.pt".format(
+                config["training_params"]["exp_name"],
+                lr,
+                bs
+            )
+            model_dir = os.path.join(        ## save dir
+                './plots/ann_pair_',
+                config["training_params"]["exp_name"]
+            )
+            model_path = os.path.join(model_dir, model_name)
+            os.makedirs(model_dir, exist_ok=True)
+            torch.save(model.state_dict(), model_path)
+            logger.info(f"Model saved at {model_path}")
+            logger.info(f"Model Name: {model_name}")
+
             results.append(
                 {
                     "learning_rate": lr,
@@ -147,11 +188,11 @@ def main():
     train_dataset = BHSceneDataset(**config["train_dataset"])   ## get train dataset
     test_dataset = BHSceneDataset(**config["test_dataset"])    ## get test dataset
     if config["training_params"]["run_experiments"]:
-        results = run_experiment(config, train_dataset, test_dataset)
         save_dir = os.path.join(        ## save dir
             './plots/ann',
             config["training_params"]["exp_name"]
         )
+        results = run_experiment(config, train_dataset, test_dataset)
         os.makedirs(save_dir, exist_ok=True)
         plot_metric_contour(
             results, 
@@ -172,6 +213,16 @@ def main():
             results, 
             "test_f1", 
             os.path.join(save_dir, "test_f1_vs_epoch.png") if config["training_params"]["save_plots"] else None
+        )
+        plot_single_epoch_vs_metric(
+            results, 
+            "test_loss", 
+            os.path.join(save_dir, "test_loss_vs_epoch.png") if config["training_params"]["save_plots"] else None
+        )
+        plot_single_epoch_vs_metric(
+            results, 
+            "train_loss", 
+            os.path.join(save_dir, "train_loss_vs_epoch.png") if config["training_params"]["save_plots"] else None
         )
         if config["training_params"]["save_plots"]:
             ## save the results
