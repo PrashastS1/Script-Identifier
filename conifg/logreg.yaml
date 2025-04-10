@@ -1,18 +1,17 @@
 logreg_params:
   save_plots: true
-  exp_name: "logreg_lda"
+  exp_name: "logreg_pca_lda_multiclass"   # will be reused in logs/plots
   use_pca: true
-  pca_components: 2
-
-  use_lda: true              # 🔹 Set true to enable LDA
-  lda_mode: binary            # 🔹 Options: 'binary' or 'multiclass'
+  pca_components: 100
+  use_lda: true
+  lda_mode: multiclass                   # binary or multiclass
 
 dataset:
   root_dir: "data/recognition"
   train_split: true
   transformation: true
-  backbone: 'resnet50'        # Options: 'hog', 'sift', 'resnet50', 'vit_huge', 'vit', null
-  gap_dim: 1                  # Used for CNN backbones only
+  backbone: "resnet50"                   # Options: 'hog', 'sift', 'resnet50', 'vit', 'vit_huge', null
+  gap_dim: 1                             # Used only for CNN backbones
 
 target:
-  language: "bengali"         # Train vs. all setup (1-vs-rest)
+  language: "bengali"                    # This will be updated dynamically by batch test script
