@@ -12,7 +12,6 @@ from dataset.BH_scene_dataset import BHSceneDataset
 from utils.logreg_plot_utils import plot_decision_boundary
 
 
-
 def load_features(dataset, target_language_id):
     features = []
     labels = []
@@ -23,6 +22,20 @@ def load_features(dataset, target_language_id):
         labels.append(1 if y == target_language_id else 0)
 
     return np.array(features), np.array(labels)
+
+
+def setup_logger(log_dir: str, exp_name: str):
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, f"{exp_name}.txt")
+
+    logging.basicConfig(
+        filename=log_path,
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        filemode="a"
+    )
+    logging.info("========== New Run Started ==========")
+    return log_path
 
 
 def main():
@@ -40,8 +53,11 @@ def main():
     lda_mode = logreg_cfg.get("lda_mode", "binary")
     save_plots = logreg_cfg.get("save_plots", False)
     exp_name = logreg_cfg.get("exp_name", "logreg_exp")
-
     backbone_name = dataset_args.get("backbone", "unknown")
+
+    # Set up logger AFTER exp_name is defined
+    log_path = setup_logger("logs", exp_name)
+    print(f"[INFO] Logging to: {log_path}")
 
     # Load datasets
     train_dataset = BHSceneDataset(**dataset_args)
@@ -65,6 +81,7 @@ def main():
     # Optional PCA
     if pca_flag:
         print("[INFO] Applying PCA...")
+        logging.info(f"PCA enabled: True, Components: {pca_dim}")
         pca = PCA(n_components=pca_dim)
         x_train = pca.fit_transform(x_train)
         x_test = pca.transform(x_test)
@@ -72,6 +89,7 @@ def main():
     # Optional LDA
     if lda_flag:
         print(f"[INFO] Applying LDA ({lda_mode})...")
+        logging.info(f"LDA enabled: True, Mode: {lda_mode}")
         if lda_mode == "binary":
             lda = LDA(n_components=1)
         else:
@@ -95,11 +113,22 @@ def main():
     print("[INFO] Classification Report:")
     print(report)
 
+    logging.info(f"Backbone: {backbone_name}")
+    logging.info(f"Target Language: {lang}")
+    logging.info(f"Accuracy: {acc * 100:.2f}%")
+    logging.info("Classification Report:\n" + report)
+
     # Save decision boundary plot
     if save_plots:
         plot_dir = os.path.join("plots", "logreg", exp_name)
         plot_decision_boundary(x_train, y_train, model, lang, plot_dir, backbone=backbone_name)
 
+        logging.info(f"Decision boundary plot saved to: {plot_dir}")
+
+    logging.info("====================Run Completed====================")
 
 if __name__ == "__main__":
     main()
+
+
+
