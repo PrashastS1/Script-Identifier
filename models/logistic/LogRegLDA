@@ -34,11 +34,14 @@ def setup_logger(log_dir: str, exp_name: str):
         format="%(asctime)s - %(levelname)s - %(message)s",
         filemode="a"
     )
+
     logging.info("========================New Run Started========================")
     return log_path
 
 
 def main():
+
+
     # Load config
     with open("conifg/logreg.yaml", "r") as f:
         config = yaml.safe_load(f)
@@ -55,7 +58,6 @@ def main():
     exp_name = logreg_cfg.get("exp_name", "logreg_exp")
     backbone_name = dataset_args.get("backbone", "unknown")
 
-    # Set up logger AFTER exp_name is defined
     log_path = setup_logger("logs", exp_name)
     print(f"[INFO] Logging to: {log_path}")
 
