@@ -34,7 +34,8 @@ def setup_logger(log_dir: str, exp_name: str):
         format="%(asctime)s - %(levelname)s - %(message)s",
         filemode="a"
     )
-
+    
+    logging.info("\n \n")
     logging.info("========================New Run Started========================")
     return log_path
 

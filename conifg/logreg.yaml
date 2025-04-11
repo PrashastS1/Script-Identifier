@@ -1,13 +1,13 @@
 dataset:
-  backbone: hog
+  backbone: hog  
   gap_dim: 1
   root_dir: data/recognition
   train_split: true
   transformation: true
 logreg_params:
-  exp_name: logreg_pca_lda_multiclass
+  exp_name: logreg_pca_lda_sift_multiclass
   lda_mode: multiclass
-  pca_components: 100
+  pca_components: 64
   save_plots: true
   use_lda: true
   use_pca: true
