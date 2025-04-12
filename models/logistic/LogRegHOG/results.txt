@@ -197,3 +197,23 @@ weighted avg       0.97      0.86      0.91     22336
 2025-03-28 17:06:53,879 - INFO - Script finished.
 2025-03-28 17:07:00,872 - INFO - Saved decision boundary plot for telugu at d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\plots\telugu_20250328_170658.png
 2025-03-28 17:07:00,872 - INFO - =========================================
+2025-03-31 04:26:09,482 - INFO - Script started.
+2025-03-31 04:27:16,234 - INFO - Script started.
+2025-03-31 04:30:06,950 - INFO - Script started.
+2025-03-31 04:30:09,604 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\LogRegHOG\../../../data/recognition/train.csv for language: bengali
+2025-03-31 04:38:22,196 - INFO - Loading dataset from d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\LogRegHOG\../../../data/recognition/test.csv for language: bengali
+2025-03-31 04:43:48,838 - INFO - Train set size: 78159, Test set size: 22336
+2025-03-31 04:50:09,830 - INFO - Model Accuracy: 78.18%
+2025-03-31 04:50:09,857 - INFO - Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.98      0.78      0.87     21175
+           1       0.16      0.74      0.26      1161
+
+    accuracy                           0.78     22336
+   macro avg       0.57      0.76      0.57     22336
+weighted avg       0.94      0.78      0.84     22336
+
+2025-03-31 04:50:09,882 - INFO - Script finished.
+2025-03-31 04:50:17,118 - INFO - Saved decision boundary plot for bengali at d:\MyStuff\College\.4thSemester\PRML\Project\Script-Identifier\models\logistic\LogRegHOG\plots\bengali_20250331_045014.png
+2025-03-31 04:50:17,119 - INFO - =========================================
