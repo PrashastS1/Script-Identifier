@@ -9,7 +9,7 @@ class LanguageRecognitionTransforms:
     def get_transforms(backbone_type: str = None, phase: str = 'train', img_size: int = 224):
         """
         Args:
-            backbone_type: None (custom), 'resnet50', 'vgg', 'vit', 'swin', 'beit', 'sift', 'hog'
+            backbone_type: None (custom), 'resnet50', 'vgg', 'vit', 'swin', 'beit', 'sift', 'hog', 'vit_large
             phase: 'train' or 'test'
             img_size: Final output size (square)
         """
@@ -33,7 +33,7 @@ class LanguageRecognitionTransforms:
             # Updated normalization logic
             if backbone_type in ['resnet50', 'vgg']:
                 norm = norms['imagenet']
-            elif backbone_type in ['vit', 'vit_huge']:
+            elif backbone_type in ['vit', 'vit_large']:
                 norm = norms['vit']
             else:
                 norm = norms['default']
@@ -123,7 +123,7 @@ class LanguageRecognitionTransforms:
                 ToTensorV2()
             ])
 
-        elif backbone_type in ['vit', 'vit_huge']:
+        elif backbone_type in ['vit', 'vit_large']:
             transforms.extend([
                 A.RandomResizedCrop((img_size, img_size), scale=(0.7, 1), ratio=(0.8, 1.2)),
                 A.HorizontalFlip(p=0.3),
