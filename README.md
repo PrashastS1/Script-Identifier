@@ -22,4 +22,129 @@ This project adheres to the CSL2050 guidelines, emphasizing rigorous evaluation,
 
 ## Repository Structure
 
-.├── config/ # Configuration files for experiments ├── dataset/ # Data loaders and transformations ├── models/ # ML models and backbones ├── tools/ # Training and inference scripts ├── utils/ # Plotting and utility functions ├── Visualisation/ # Visualization scripts ├── data/ # Placeholder for processed data and latents ├── frontend/ # Next.js frontend interface ├── main.py # Entry point for inference ├── ui.py # Gradio-based UI ├── fastapi_server.py# REST API with FastAPI ├── requirements.txt # Dependencies └── README.md # Project documentation
+```
+.
+├── config/          # Configuration files for experiments
+├── dataset/         # Data loaders and transformations
+├── models/          # ML models and backbones
+├── tools/           # Training and inference scripts
+├── utils/           # Plotting and utility functions
+├── Visualisation/   # Visualization scripts
+├── data/            # Placeholder for processed data and latents
+├── frontend/        # Next.js frontend interface
+├── main.py          # Entry point for inference
+├── ui.py            # Gradio-based UI
+├── fastapi_server.py# REST API with FastAPI
+├── requirements.txt # Dependencies
+└── README.md        # Project documentation
+```
+
+---
+
+## Installation
+
+### Prerequisites
+- Python 3.10+
+- CUDA-enabled GPU (for faster training)
+- pip / conda for package management
+
+### Setup
+
+```bash
+git clone https://github.com/AurindumBanerjee/Script-Identifier.git
+cd Script-Identifier
+pip install -r requirements.txt
+```
+
+---
+
+## How to Run
+
+### 1. Logistic Regression with HOG
+
+```bash
+python -m models.logistic.LogBackBone
+```
+
+### 2. ANN Training with Vision Transformer Features
+
+```bash
+python -m tools.ann_train
+```
+
+### 3. API Server
+
+```bash
+python fastapi_server.py
+```
+
+API Endpoint:
+- `POST /pipeline/`: Upload an image for script prediction
+
+### 4. Gradio UI
+
+```bash
+python ui.py
+```
+
+---
+
+## Dataset
+
+We use the **[Bharat Scene Text Dataset](https://github.com/Bhashini-IITJ/BharatSceneTextDataset)** containing scene text in 14 Indian scripts. Data splits are provided for training and testing.
+
+---
+
+## Visualizations
+
+The project includes:
+- PCA + t-SNE projections for embeddings
+- Decision boundaries of classifiers
+- Language-wise class distribution
+- Random samples and feature maps
+
+Run:
+```bash
+python -m Visualisation.pca_tsne_visualization
+```
+
+---
+
+## Deliverables
+
+As per CSL2050 project requirements:
+
+| Component            | Status       |
+|----------------------|--------------|
+| Mid-Project Report   | ✅ Submitted  |
+| Final Report         | Pending   |
+| GitHub Repository    | ✅ Updated    |
+| Project Page         | ✅ [`Web Page`](./index.html) |
+| Web Demo (Gradio)    | Pending   |
+| Spotlight Video      | Pending |
+| Minutes of Meetings  | ✅ Maintained |
+
+---
+
+## Performance Highlights
+
+| Model         | Feature       | Accuracy (%) |
+|---------------|---------------|--------------|
+| Logistic Reg. | HOG + PCA     | To be added         |
+| ANN           | ViT-Huge      | To be added         |
+| SVM           | ResNet        | To be added         |
+
+*Additional metrics and confusion matrices available in report.*
+
+---
+
+## Project Team
+
+Developed by Team **Pending**  
+Under **CSL2050 - Pattern Recognition and Machine Learning**
+
+---
+
+## License
+
+This project is licensed under the [MIT License](./LICENSE).
