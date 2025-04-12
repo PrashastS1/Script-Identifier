@@ -2,12 +2,13 @@ from torch.utils.data import Dataset
 import torch
 import pandas as pd
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import cv2
 import numpy as np
 from loguru import logger
-from skimage.feature import hog
+from skimage.feature import (
+    hog,
+    local_binary_pattern
+)
 from typing import Dict, Any
 from models.backbones.resnet50 import RESNET_backbone
 from models.backbones.vgg import VGG_backbone
@@ -35,7 +36,7 @@ class BHSceneDataset(Dataset):
         - train_split: bool, whether to use train split or test split
         - Transformation: bool, whether to use albumentations for data augmentation
         #removed (not needed)  - linear_transform: bool, whether to linearize the image before passing to the backbone
-        - backbone: str, backbone to be used for feature extraction ## resnet50, vgg, vit, vit_large, hog, sift
+        - backbone: str, backbone to be used for feature extraction ## resnet50, vgg, vit, vit_large, hog, sift, lbp
         ###### swin, beit in progress
         - gap_dim: int, dimension of the global average pooled features
 
@@ -63,15 +64,15 @@ class BHSceneDataset(Dataset):
         if self.gap_dim and self.backbone is None:
             logger.warning("gap_dim is specified but backbone is None")
         
-        if not self.gap_dim and self.backbone and self.backbone != 'vit' and self.backbone != 'hog' and self.backbone != 'sift' and self.backbone != 'vit_large':
+        if not self.gap_dim and self.backbone and self.backbone != 'vit' and self.backbone != 'hog' and self.backbone != 'sift' and self.backbone != 'vit_large' and self.backbone != 'lbp':
             logger.warning(f"gap_dim is not specified but backbone is not {self.backbone}, setting gap_dim to 1")
             self.gap_dim = 1
 
-        if self.gap_dim and self.backbone in ['vit', 'vit_large', 'hog', 'sift']:
+        if self.gap_dim and self.backbone in ['vit', 'vit_large', 'hog', 'sift', 'lbp']:
             logger.warning(f"gap_dim does not matter for {self.backbone}")
             self.gap_dim = 1
 
-        if self.backbone in ['vit', 'vit_large', 'sift', 'hog']:
+        if self.backbone in ['vit', 'vit_large', 'sift', 'hog', 'lbp']:
             self.gap_dim = 1 
 
         if not os.path.exists(self.csv_path):
@@ -123,6 +124,8 @@ class BHSceneDataset(Dataset):
             logger.info("Using SIFT for feature extraction")
         elif backbone == "hog":
             logger.info(f"Using HOG for feature extraction")
+        elif backbone == "lbp":
+            logger.info(f"Using LBP for feature extraction")
         else:
             raise ValueError(f"Invalid backbone: {backbone}, use valid backbone - resnet50, vgg, vit, vit_large, sift, hog")
         
@@ -187,6 +190,32 @@ class BHSceneDataset(Dataset):
             feature_vector=True
         )
         return features
+    
+    def apply_lbp(self, image):
+        radii=[1,2,3,4,5,6,7,8,9,10,11,12]
+        np_image = image.squeeze(0).permute(1, 2, 0).cpu()
+        ## print max and min element
+        # print(np_image.max(), np_image.min())
+        # np_image = (image * 255).astype(np.uint8)
+        np_image = np_image.numpy().astype(np.uint8)
+        # Convert to grayscale (OpenCV expects HxWxC)
+        gray = cv2.cvtColor(np_image, cv2.COLOR_RGB2GRAY)
+        features = []
+        height, width = gray.shape
+        regions = [
+            gray[:height//2, :],          # Upper half
+            gray[height//4:3*height//4, :], # Central half
+            gray[height//2:, :]           # Lower half
+        ]
+        for region in regions:
+            for radius in radii:
+                n_points = 8 * radius
+                lbp = local_binary_pattern(region, n_points, radius, method='uniform')
+                hist, _ = np.histogram(lbp, bins=256, range=(0, 255))
+                features.extend(hist / (hist.sum() + 1e-6))  # Normalized histogram
+        
+        return np.array(features)
+
 
 
     def __len__(self) -> int:
@@ -251,6 +280,9 @@ class BHSceneDataset(Dataset):
             elif self.backbone_name == 'hog':
                 image = self.apply_hog(image)
                 image = torch.tensor(image).float().to(self.device)
+            elif self.backbone_name == 'lbp':
+                image = self.apply_lbp(image)
+                image = torch.tensor(image).float().to(self.device)
             else:
                 image = self.backbone(image)
                 image = image.squeeze(0)
@@ -301,7 +333,7 @@ if __name__ == "__main__":
         root_dir="data/recognition",
         train_split=False,
         transformation=True,
-        backbone='vit_large',
+        backbone='lbp',
         gap_dim=2
     )
 
