@@ -93,15 +93,32 @@ def main():
     if lda_flag:
         print(f"[INFO] Applying LDA ({lda_mode})...")
         logging.info(f"LDA enabled: True, Mode: {lda_mode}")
-        if lda_mode == "binary":
-            lda = LDA(n_components=1)
-        else:
-            n_classes = len(np.unique(y_train))
-            n_components = min(n_classes - 1, x_train.shape[1])
-            lda = LDA(n_components=n_components)
 
-        x_train = lda.fit_transform(x_train, y_train)
-        x_test = lda.transform(x_test)
+        n_classes = len(np.unique(y_train))
+        logging.info(f"Number of classes in dataset: {n_classes}")
+        logging.info(f"Feature dimensions before LDA: {x_train.shape[1]}")
+
+        if lda_mode == "binary":
+            if x_train.shape[1] < 1:
+                print("[WARN] Skipping LDA — feature dimension < 1")
+                logging.warning("[SKIP LDA] Feature dimension too low for binary LDA")
+            else:
+                lda = LDA(n_components=1)
+                x_train = lda.fit_transform(x_train, y_train)
+                x_test = lda.transform(x_test)
+                logging.info("[LDA] Applied binary LDA with 1 component")
+
+    else:  # multiclass
+        max_lda_components = min(x_train.shape[1], n_classes - 1)
+        if max_lda_components < 1:
+            print(f"[WARN] Skipping LDA — max components = {max_lda_components}")
+            logging.warning(f"[SKIP LDA] Insufficient components (max={max_lda_components}) for multiclass LDA")
+        else:
+            lda = LDA(n_components=max_lda_components)
+            x_train = lda.fit_transform(x_train, y_train)
+            x_test = lda.transform(x_test)
+            logging.info(f"[LDA] Applied multiclass LDA with {max_lda_components} components")
+
 
     # Train Logistic Regression
     model = LogisticRegression(solver='liblinear', class_weight='balanced')
