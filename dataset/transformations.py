@@ -9,7 +9,7 @@ class LanguageRecognitionTransforms:
     def get_transforms(backbone_type: str = None, phase: str = 'train', img_size: int = 224):
         """
         Args:
-            backbone_type: None (custom), 'resnet50', 'vgg', 'vit', 'swin', 'beit', 'sift', 'hog'
+            backbone_type: None (custom), 'resnet50', 'vgg', 'vit', 'swin', 'beit', 'sift', 'hog', 'vit_large
             phase: 'train' or 'test'
             img_size: Final output size (square)
         """
@@ -33,7 +33,7 @@ class LanguageRecognitionTransforms:
             # Updated normalization logic
             if backbone_type in ['resnet50', 'vgg']:
                 norm = norms['imagenet']
-            elif backbone_type in ['vit', 'vit_huge']:
+            elif backbone_type in ['vit', 'vit_large']:
                 norm = norms['vit']
             else:
                 norm = norms['default']
@@ -66,30 +66,47 @@ class LanguageRecognitionTransforms:
         ])
 
         # Backbone-specific transforms
-        if not backbone_type or backbone_type == 'custom':
+        # Modified section for custom (paper-specific) augmentations
+        if not backbone_type or backbone_type == 'custom' or backbone_type == 'LBP':
             transforms.extend([
                 A.RandomResizedCrop((img_size, img_size), scale=(0.85, 1)),
-                A.HorizontalFlip(p=0.4),
+                # Paper-recommended augmentations
+                A.HorizontalFlip(p=0.5),  # Increased probability for script invariance
                 A.Affine(
-                    translate_percent={'x': (-0.05, 0.05), 'y': (-0.05, 0.05)},
-                    scale=(0.9, 1.1),
-                    rotate=(-30, 30),
-                    shear=0,
+                    translate_percent={'x': (-0.03, 0.03), 'y': (-0.03, 0.03)},
+                    scale=(0.95, 1.05),  # More conservative scaling
+                    rotate=(-10, 10),  # Reduced rotation for LBP stability
+                    shear=(-2, 2),
                     interpolation=cv2.INTER_CUBIC,
-                    border_mode=cv2.BORDER_CONSTANT,
+                    border_mode=base_params['border_mode'],
                     fill=255,
-                    fit_output=False,
-                    keep_ratio=False,
-                    p=0.5
+                    p=0.4
                 ),
-                A.ColorJitter(brightness=0.15, contrast=0.15, saturation=0.1, hue=0.05, p=0.5),
+                # Contrast normalization compatible with paper's preprocessing
+                A.RandomBrightnessContrast(
+                    brightness_limit=0.1,  # Reduced for bi-level text preservation
+                    contrast_limit=0.1,
+                    p=0.3
+                ),
+                # Paper-suggested noise injection
+                A.GaussNoise(var_limit=(10, 30), p=0.3),
+                # Elastic transforms for handwriting simulation
+                A.ElasticTransform(
+                    alpha=0.5,
+                    sigma=20,
+                    alpha_affine=5,
+                    border_mode=base_params['border_mode'],
+                    p=0.2
+                ),
+                # Structural perturbations
                 A.CoarseDropout(
-                    num_holes_range=(3, 6),
-                    hole_height_range=(0.05, 0.1),
-                    hole_width_range=(0.05, 0.1),
+                    num_holes_range=(1, 3),  # Reduced holes for text preservation
+                    hole_height_range=(0.02, 0.1),
+                    hole_width_range=(0.02, 0.1),
                     fill=255,
-                    p=0.5
+                    p=0.3
                 ),
+                # LBP-compatible normalization
                 A.Normalize(**norms['default']),
                 ToTensorV2()
             ])
@@ -123,7 +140,7 @@ class LanguageRecognitionTransforms:
                 ToTensorV2()
             ])
 
-        elif backbone_type in ['vit', 'vit_huge']:
+        elif backbone_type in ['vit', 'vit_large']:
             transforms.extend([
                 A.RandomResizedCrop((img_size, img_size), scale=(0.7, 1), ratio=(0.8, 1.2)),
                 A.HorizontalFlip(p=0.3),
