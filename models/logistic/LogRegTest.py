@@ -3,6 +3,8 @@ import yaml
 import subprocess
 import logging
 
+# python -m models.Logistic.LogRegTest
+
 
 def setup_logger(log_dir: str, exp_name: str):
     os.makedirs(log_dir, exist_ok=True)
