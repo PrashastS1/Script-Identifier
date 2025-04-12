@@ -8,6 +8,16 @@
 
 This project adheres to the CSL2050 guidelines, emphasizing rigorous evaluation, failure case analysis, and comprehensive deliverables including code, report, demo, and presentation.
 
+---
+
+## Project Team
+
+Developed by Team **Pending**  
+Under **CSL2050 - Pattern Recognition and Machine Learning**
+
+---
+
+
 ## Features
 
 - Classification of scene text into scripts such as Hindi, Tamil, Bengali, etc.
@@ -60,53 +70,13 @@ pip install -r requirements.txt
 
 ## How to Run
 
-### 1. Logistic Regression with HOG
-
-```bash
-python -m models.logistic.LogBackBone
-```
-
-### 2. ANN Training with Vision Transformer Features
-
-```bash
-python -m tools.ann_train
-```
-
-### 3. API Server
-
-```bash
-python fastapi_server.py
-```
-
-API Endpoint:
-- `POST /pipeline/`: Upload an image for script prediction
-
-### 4. Gradio UI
-
-```bash
-python ui.py
-```
+To be added model-wise.
 
 ---
 
 ## Dataset
 
-We use the **[Bharat Scene Text Dataset](https://github.com/Bhashini-IITJ/BharatSceneTextDataset)** containing scene text in 14 Indian scripts. Data splits are provided for training and testing.
-
----
-
-## Visualizations
-
-The project includes:
-- PCA + t-SNE projections for embeddings
-- Decision boundaries of classifiers
-- Language-wise class distribution
-- Random samples and feature maps
-
-Run:
-```bash
-python -m Visualisation.pca_tsne_visualization
-```
+We use the **[Bharat Scene Text Dataset](https://github.com/Bhashini-IITJ/BharatSceneTextDataset)** containing scene text in 13 Indian scripts. Data splits are provided for training and testing.
 
 ---
 
@@ -119,7 +89,7 @@ As per CSL2050 project requirements:
 | Mid-Project Report   | ✅ Submitted  |
 | Final Report         | Pending   |
 | GitHub Repository    | ✅ Updated    |
-| Project Page         | ✅ [`Web Page`](./index.html) |
+| Project Page         | ✅ [`Web Page`](https://aurindumbanerjee.github.io/Script-Identifier/) |
 | Web Demo (Gradio)    | Pending   |
 | Spotlight Video      | Pending |
 | Minutes of Meetings  | ✅ Maintained |
@@ -135,13 +105,6 @@ As per CSL2050 project requirements:
 | SVM           | ResNet        | To be added         |
 
 *Additional metrics and confusion matrices available in report.*
-
----
-
-## Project Team
-
-Developed by Team **Pending**  
-Under **CSL2050 - Pattern Recognition and Machine Learning**
 
 ---
 
