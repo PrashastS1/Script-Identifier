@@ -34,19 +34,19 @@ Under **CSL2050 - Pattern Recognition and Machine Learning**
 
 ```
 .
-├── config/          # Configuration files for experiments
-├── dataset/         # Data loaders and transformations
-├── models/          # ML models and backbones
-├── tools/           # Training and inference scripts
-├── utils/           # Plotting and utility functions
-├── Visualisation/   # Visualization scripts
-├── data/            # Placeholder for processed data and latents
-├── frontend/        # Next.js frontend interface
-├── main.py          # Entry point for inference
-├── ui.py            # Gradio-based UI
-├── fastapi_server.py# REST API with FastAPI
-├── requirements.txt # Dependencies
-└── README.md        # Project documentation
+├── config/              # Configuration files for experiments
+├── dataset/             # Data loaders and transformations
+├── models/              # ML models and backbones
+├── tools/               # Training and inference scripts
+├── utils/               # Plotting and utility functions
+├── Visualisation/       # Visualization scripts
+├── data/                # Placeholder for processed data and latents
+├── frontend/            # Next.js frontend interface
+├── main.py              # Entry point for inference
+├── ui.py                # UI
+├── fastapi_server.py    # REST API with FastAPI
+├── requirements.txt     # Dependencies
+└── README.md            # Repo documentation
 ```
 
 ---
