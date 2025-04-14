@@ -96,7 +96,7 @@ Target class configuration for binary classification.
 
 | Key         | Description                                            | Type   | Values / Examples                       |
 |-------------|--------------------------------------------------------|--------|------------------------------------------|
-| `language`  | The positive class for 1-vs-rest classification        | `str`  | One of: `assamese`, `bengali`, `english`, `gujarati`, `hindi`, `kannada`, `malayalam`, `marathi`, 'meitei', `odia`, `punjabi`, `tamil`, `telugu`, `urdu` |
+| `language`  | The positive class for 1-vs-rest classification        | `str`  | One of: `assamese`, `bengali`, `english`, `gujarati`, `hindi`, `kannada`, `malayalam`, `marathi`, `meitei`, `odia`, `punjabi`, `tamil`, `telugu`, `urdu` |
 
 ---
 
