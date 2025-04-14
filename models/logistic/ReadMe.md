@@ -32,7 +32,7 @@ Script-Identifier [created after running your first experiment]
 - PCA (Principal Component Analysis)
 - LDA (Linear Discriminant Analysis)
   - Binary (for 1-vs-rest setup)
-  - Multiclass (native support for 13 languages)
+  - Multiclass (support for 13 languages)
 
 ### Classification
 - Logistic Regression
@@ -149,7 +149,7 @@ python -m models.Logistic.LogRegTest
 
 ---
 
-References
+## References
 
 [How to save models using pickle](https://machinelearningmastery.com/save-load-machine-learning-models-python-scikit-learn/)
 
