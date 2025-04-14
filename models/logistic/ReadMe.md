@@ -5,60 +5,7 @@ This folder contains all modules, scripts, and batch pipelines for training and 
 ## Folder Structure
 
 models/Logistic/
-├── LogBackBone.py             # Baseline using HOG + Logistic Regression
-├── LogRegLDA.py               # Pipeline supporting PCA + LDA + Logistic Regression
-├── LogRegTest.py              # Batch evaluation for all languages (1-vs-rest LDA)
-├── LogRegLDAMulticlass.py     # One-pass multiclass training using PCA + LDA
-├── progress/                  # Stores completed language logs to avoid recomputation
-├── plots/                     # Decision boundary plots
-└── logs/                      # Per-experiment logs with metrics and reports
-
-## Techniques Used
-
-### Feature Extraction
-- HOG (Histogram of Oriented Gradients)
-- SIFT (Scale-Invariant Feature Transform)
-- CNN Backbones:
-  - ResNet50
-  - ViT (Vision Transformer)
-
-### Dimensionality Reduction
-- PCA (Principal Component Analysis)
-- LDA (Linear Discriminant Analysis)
-  - Binary (for 1-vs-rest setup)
-  - Multiclass (native support for 13 languages)
-
-### Classification
-- Logistic Regression
-  - Solver: liblinear, sag
-  - Balanced class weighting
-  - Configurable regularization (L2)
-
-## Configurable Parameters
-
-All hyperparameters are controlled via `conifg/logreg.yaml`:
-- Backbone type
-- PCA usage and component count
-- LDA mode (binary or multiclass)
-- Experiment name and plot saving
-- Target language (used in binary LDA setup)
-
-## Utilities
-
-- `plot_decision_boundary`: Visualizes classification boundary using 2D PCA
-- YAML-driven pipeline for reproducibility
-- Batch logger to resume training after failure
-
-## Usage
-
-To train for a single language:
-# Logistic Regression - Script Identifier
-
-This folder contains all modules, scripts, and batch pipelines for training and evaluating Logistic Regression models using various feature extraction backbones. The goal is to classify scene-text images based on the script/language.
-
-## Folder Structure
-
-models/Logistic/
+.
 ├── LogBackBone.py             # Baseline using HOG + Logistic Regression
 ├── LogRegLDA.py               # Pipeline supporting PCA + LDA + Logistic Regression
 ├── LogRegTest.py              # Batch evaluation for all languages (1-vs-rest LDA)
@@ -170,7 +117,7 @@ logreg_params:
 target:
   language: "bengali"
 
-
+---
 
 ## Usage
 
