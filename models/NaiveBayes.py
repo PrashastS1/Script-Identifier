@@ -18,10 +18,6 @@ import seaborn as sns
 sys.path.append('/kaggle/input/prml-dataset10/script-id')
 from dataset.BH_scene_dataset import BHSceneDataset
 
-# Copy language_encode.json to the expected location
-# !mkdir -p /kaggle/working/dataset
-# !cp /kaggle/input/prml-dataset6/script-id/dataset/language_encode.json /kaggle/working/dataset/
-
 # --- Configuration ---
 PLOTS_DIR = "/kaggle/working/plots"
 BACKBONE = "hog"  # Will need to be set before running
@@ -30,15 +26,12 @@ DATA_ROOT = '/kaggle/input/prml-dataset10/script-id/data/recognition'
 FEATURES_DIR = "/kaggle/working/features"
 FIXED_GAP_DIM = None
 
-# --- Hyperparameter Grid for GridSearchCV ---
-# Note: GaussianNB has fewer hyperparameters; we'll focus on PCA and a simple NB parameter
 PARAM_GRID = {
     'n_components': [50, 100, 200],  # PCA components
     'whiten': [False, True],        # PCA whitening
     'var_smoothing': [1e-9, 1e-8, 1e-7]  # GaussianNB variance smoothing
 }
 
-# --- Helper Functions ---
 def extract_features(dataset, batch_size=128):
     dataloader = DataLoader(
         dataset,
