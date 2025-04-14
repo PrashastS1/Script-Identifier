@@ -16,17 +16,36 @@ import joblib
 # python -m models.Logistic.LogRegLDAMulticlass
 
 def load_features(dataset):
+    """
+    Function to load features and labels from the dataset.
+
+    Inputs :
+
+        dataset: Dataset object containing the data.
+
+    Outputs :
+
+        features: Numpy array of features.
+        labels: Numpy array of binary labels (1 for target language, 0 otherwise).
+
+    """
+
+
+
     features, labels = [], []
     for i in tqdm(range(len(dataset)), desc="Extracting Features"):
         x, y = dataset[i]
         features.append(x.cpu().numpy() if hasattr(x, 'cpu') else x)
-        labels.append(y)  # Use actual label, not binary
+        
+        labels.append(y)
     return np.array(features), np.array(labels)
 
 
 def setup_logger(log_dir: str, exp_name: str):
+
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, f"{exp_name}.txt")
+
     logging.basicConfig(
         filename=log_path,
         level=logging.INFO,
@@ -95,8 +114,10 @@ def main():
         solver='saga',
         class_weight='balanced',
         penalty='l2',
-        max_iter=100
+        multi_class = 'ovr', 
+        max_iter=2000
     )
+
     model.fit(x_train, y_train)
 
     # Evaluation
@@ -117,7 +138,7 @@ def main():
 
     # Saving model 
 
-    joblib.dump(model, "LRMulticlassModel.pkl") 
+    joblib.dump(model, "models\Logistic\LRMulticlassModel.pkl") 
 
     # Loading model 
     # model2 = joblib.load("LRMulticlassModel.pkl")

@@ -5,7 +5,7 @@ dataset:
   train_split: true
   transformation: true
 logreg_params:
-  exp_name: logreg_pca_lda_sift_multiclass2
+  exp_name: logreg_sift_transf_multiclass
   lda_mode: multiclass
   pca_components: 100
   save_plots: true

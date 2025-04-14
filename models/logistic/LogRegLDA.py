@@ -16,6 +16,22 @@ from utils.logreg_plot_utils import plot_decision_boundary
 
 
 def load_features(dataset, target_language_id):
+    """
+    Function to load features and labels from the dataset.
+
+    Inputs :
+
+        dataset: Dataset object containing the data.
+        target_language_id: The language ID for the target language.
+
+    Outputs :
+
+        features: Numpy array of features.
+        labels: Numpy array of binary labels (1 for target language, 0 otherwise).
+
+    """
+
+
     features = []
     labels = []
 
@@ -111,22 +127,9 @@ def main():
                 x_test = lda.transform(x_test)
                 logging.info("[LDA] Applied binary LDA with 1 component")
 
-    else:  # multiclass
-        max_lda_components = min(x_train.shape[1], n_classes - 1)
-
-        if max_lda_components < 1:
-            print(f"[WARN] Skipping LDA — max components = {max_lda_components}")
-            logging.warning(f"[SKIP LDA] Insufficient components (max={max_lda_components}) for multiclass LDA")
-
-        else:
-            lda = LDA(n_components = max_lda_components)
-            x_train = lda.fit_transform(x_train, y_train)
-            x_test = lda.transform(x_test)
-            logging.info(f"[LDA] Applied multiclass LDA with {max_lda_components} components")
-
 
     # Train Logistic Regression
-    model = LogisticRegression(solver='sag', class_weight='balanced', penalty='l2')
+    model = LogisticRegression(solver='liblinear', class_weight='balanced', penalty='l2')
     model.fit(x_train, y_train)
 
     # Evaluate
