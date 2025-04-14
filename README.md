@@ -12,7 +12,7 @@ This project adheres to the CSL2050 guidelines, emphasizing rigorous evaluation,
 
 ## Project Team
 
-Developed by Team **Pending**  
+Developed by Team **Lexiconauts**  
 Under **CSL2050 - Pattern Recognition and Machine Learning**
 
 ---
@@ -25,7 +25,7 @@ Under **CSL2050 - Pattern Recognition and Machine Learning**
 - Feature extraction techniques: HOG, SIFT, ResNet, VGG, Vision Transformer (ViT)
 - Dimensionality reduction: PCA, LDA
 - Visualizations: t-SNE, PCA, class distributions, and decision boundaries
-- FastAPI and Gradio-based interfaces for inference and demo
+- FastAPI based interfaces for inference and demo
 - Modular, well-documented codebase with YAML-based configuration
 
 ---
@@ -34,19 +34,19 @@ Under **CSL2050 - Pattern Recognition and Machine Learning**
 
 ```
 .
-├── config/          # Configuration files for experiments
-├── dataset/         # Data loaders and transformations
-├── models/          # ML models and backbones
-├── tools/           # Training and inference scripts
-├── utils/           # Plotting and utility functions
-├── Visualisation/   # Visualization scripts
-├── data/            # Placeholder for processed data and latents
-├── frontend/        # Next.js frontend interface
-├── main.py          # Entry point for inference
-├── ui.py            # Gradio-based UI
-├── fastapi_server.py# REST API with FastAPI
-├── requirements.txt # Dependencies
-└── README.md        # Project documentation
+├── config/              # Configuration files for experiments
+├── dataset/             # Data loaders and transformations
+├── models/              # ML models and backbones
+├── tools/               # Training and inference scripts
+├── utils/               # Plotting and utility functions
+├── Visualisation/       # Visualization scripts
+├── data/                # Placeholder for processed data and latents
+├── frontend/            # Next.js frontend interface
+├── main.py              # Entry point for inference
+├── ui.py                # UI
+├── fastapi_server.py    # REST API with FastAPI
+├── requirements.txt     # Dependencies
+└── README.md            # Repo documentation
 ```
 
 ---
@@ -70,13 +70,50 @@ pip install -r requirements.txt
 
 ## How to Run
 
-To be added model-wise.
+Refer to the models/logistic ReadMe.md for an example of how to run models. Every other model made also runs similarly. 
+
+Use the following code from root to run the model. [Follow path structure from root, separated via '.' instead of '\']
+``` bash
+python -m model_folder.model_file
+```
+
+To run the fastapi server
+``` bash
+python fastapi_server.py 
+```
+
+For UI 
+``` bash
+cd frontend
+npm install
+npm run dev
+```
 
 ---
 
 ## Dataset
 
-We use the **[Bharat Scene Text Dataset](https://github.com/Bhashini-IITJ/BharatSceneTextDataset)** containing scene text in 13 Indian scripts. Data splits are provided for training and testing.
+We use the **[Bharat Scene Text Dataset](https://github.com/Bhashini-IITJ/BharatSceneTextDataset)** containing scene text in 13 Indian scripts. 
+
+In the data, we specifically use the Cropped Word Recognition Set. Data splits are provided for training and testing.
+
+
+| Language | Train | Test |
+| :---: | :---: | :---: |
+| Assamese  | 2,623 | 1,343 |
+| Bengali | 4,968 | 1,161 |
+| English | 28,778 | 8,113 |
+| Gujarati | 1,956 | 693 |
+| Hindi | 14,855 | 4,034 |
+| Kannada | 2,241 | 693 |
+| Malayalam | 2,408 | 567 |
+| Marathi | 3,932 | 1,045 |
+| Odia | 3,176 | 1,022 |
+| Punjabi | 8,544 | 2,560 |
+| Tamil | 2,041 | 507 |
+| Telugu | 2,227 | 482 |
+|**Total**| 77,749 | 22,220 |
+
 
 ---
 
@@ -87,24 +124,13 @@ As per CSL2050 project requirements:
 | Component            | Status       |
 |----------------------|--------------|
 | Mid-Project Report   | ✅ Submitted  |
-| Final Report         | Pending   |
+| Final Report         | ✅ Submitted   |
 | GitHub Repository    | ✅ Updated    |
 | Project Page         | ✅ [`Web Page`](https://aurindumbanerjee.github.io/Script-Identifier/) |
-| Web Demo (Gradio)    | Pending   |
-| Spotlight Video      | Pending |
+| Web Demo (Gradio)    | ✅ Created   |
+| Spotlight Video      | ✅ Submitted |
 | Minutes of Meetings  | ✅ Maintained |
 
----
-
-## Performance Highlights
-
-| Model         | Feature       | Accuracy (%) |
-|---------------|---------------|--------------|
-| Logistic Reg. | HOG + PCA     | To be added         |
-| ANN           | ViT-Huge      | To be added         |
-| SVM           | ResNet        | To be added         |
-
-*Additional metrics and confusion matrices available in report.*
 
 ---
 
