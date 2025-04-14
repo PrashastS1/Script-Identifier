@@ -141,7 +141,7 @@ To run multiclass once for all:
 python -m models.Logistic.LogRegLDAMulticlass
 ```
 
-To run LDA-binary for each language sequentially:
+To run LDA-binary for each language sequentially or just call LDA-Multiclass once. Will take yaml file and do testing correspondingly:
 
 ```bash
 python -m models.Logistic.LogRegTest
