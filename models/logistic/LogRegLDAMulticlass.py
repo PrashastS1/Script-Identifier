@@ -10,7 +10,10 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from dataset.BH_scene_dataset import BHSceneDataset
 from utils.logreg_plot_utils import plot_decision_boundary
+import joblib
 
+
+# python -m models.Logistic.LogRegLDAMulticlass
 
 def load_features(dataset):
     features, labels = [], []
@@ -92,8 +95,7 @@ def main():
         solver='saga',
         class_weight='balanced',
         penalty='l2',
-        multi_class='multinomial',
-        max_iter=1000
+        max_iter=100
     )
     model.fit(x_train, y_train)
 
@@ -111,6 +113,15 @@ def main():
     logging.info(f"Accuracy: {acc * 100:.2f}%")
     logging.info("Classification Report:\n" + report)
     logging.info("Confusion Matrix:\n" + np.array2string(cm))
+
+
+    # Saving model 
+
+    joblib.dump(model, "LRMulticlassModel.pkl") 
+
+    # Loading model 
+    # model2 = joblib.load("LRMulticlassModel.pkl")
+
 
     # Save plot
     if save_plots:
