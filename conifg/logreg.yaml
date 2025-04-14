@@ -1,11 +1,11 @@
 dataset:
-  backbone: vit_huge
+  backbone: sift
   gap_dim: 1
   root_dir: data/recognition
   train_split: true
   transformation: true
 logreg_params:
-  exp_name: logreg_pca_lda_vit_huge_multiclass
+  exp_name: logreg_sift_transf_multiclass
   lda_mode: multiclass
   pca_components: 100
   save_plots: true
