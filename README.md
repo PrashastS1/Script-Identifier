@@ -70,7 +70,7 @@ pip install -r requirements.txt
 
 ## How to Run
 
-Refer to the models/logistic ReadMe.md for an example of how to run models. Every other model made also runs similarly. 
+Refer to the (Logistic Regression ReadMe.md)[https://github.com/AurindumBanerjee/Script-Identifier/tree/main/models/logistic#readme]  for an example of how to run models. Every other model made also runs similarly. 
 
 Use the following code from root to run the model. [Follow path structure from root, separated via '.' instead of '\']
 ``` bash
