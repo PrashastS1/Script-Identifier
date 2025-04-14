@@ -67,7 +67,7 @@ class LanguageRecognitionTransforms:
 
         # Backbone-specific transforms
         # Modified section for custom (paper-specific) augmentations
-        if not backbone_type or backbone_type == 'custom' or backbone_type == 'LBP':
+        if not backbone_type or backbone_type == 'custom' or backbone_type == 'lbp':
             transforms.extend([
                 A.RandomResizedCrop((img_size, img_size), scale=(0.85, 1)),
                 # Paper-recommended augmentations

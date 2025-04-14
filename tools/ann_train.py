@@ -70,7 +70,7 @@ def train(
     ) -> Tuple[nn.Module, torch.optim.Optimizer, List[Dict[str, float]]]:
     # return the result of the training accuracy and f1 score
 
-    lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=1, verbose=True)
+    lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=2, verbose=True)
 
     results =[]
     loss_fn = nn.CrossEntropyLoss()
@@ -122,6 +122,7 @@ def train(
         ## print train and test result
         logger.debug(f"Epoch: {epoch}, Train Accuracy: {train_acc}, Test Accuracy: {test_acc}")
         logger.debug(f"Epoch: {epoch}, Train F1: {train_f1}, Test F1: {test_f1}")
+        logger.debug(f"learning rate: {optimizer.param_groups[0]['lr']}")
 
     logger.info(f"Final Train Accuracy: {results[-1]['train_accuracy']}, Final Test Accuracy: {results[-1]['test_accuracy']}")
     logger.info(f"Final Train F1: {results[-1]['train_f1']}, Final Test F1: {results[-1]['test_f1']}")
