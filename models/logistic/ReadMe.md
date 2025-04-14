@@ -4,10 +4,8 @@ This folder contains all modules, scripts, and batch pipelines for training and 
 
 ## Folder Structure
 
+```
 models/Logistic/
-
-'''
-.
 ├── LogBackBone.py             # Baseline using HOG + Logistic Regression
 ├── LogRegLDA.py               # Pipeline supporting PCA + LDA + Logistic Regression
 ├── LogRegTest.py              # Batch evaluation for all languages (1-vs-rest LDA)
@@ -15,7 +13,7 @@ models/Logistic/
 ├── progress/                  # Stores completed language logs to avoid recomputation
 ├── LogRegHOG/                 # Old experimentation code
 └── logs/                      # Per-experiment logs with metrics and reports
-'''
+```
 
 ## Techniques Used
 
@@ -119,7 +117,7 @@ logreg_params:
 target:
   language: "bengali"
 
-'''
+```
 
 ---
 
@@ -132,19 +130,19 @@ To train for a single language:
 
 ```bash
 python -m models.Logistic.LogRegLDA
-'''
+```
 
 To run multiclass once for all:
 
 ```bash
 python -m models.Logistic.LogRegLDAMulticlass
-'''
+```
 
 To run LDA-binary for each language sequentially:
 
 ```bash
 python -m models.Logistic.LogRegTest
-'''
+```
 
 ---
 
