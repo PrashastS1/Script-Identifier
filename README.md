@@ -112,6 +112,7 @@ In the data, we specifically use the Cropped Word Recognition Set. Data splits a
 | Punjabi | 8,544 | 2,560 |
 | Tamil | 2,041 | 507 |
 | Telugu | 2,227 | 482 |
+| Others |	20600	| - |	- |
 |**Total**| 77,749 | 22,220 |
 
 
