@@ -73,17 +73,17 @@ pip install -r requirements.txt
 Refer to the models/logistic ReadMe.md for an example of how to run models. Every other model made also runs similarly. 
 
 Use the following code from root to run the model. [Follow path structure from root, separated via '.' instead of '\']
-```bash
+``` bash
 python -m model_folder.model_file
 ```
 
 To run the fastapi server
-```bash
+``` bash
 python fastapi_server.py 
 ```
 
 For UI 
-```bash
+``` bash
 cd frontend
 npm install
 npm run dev
