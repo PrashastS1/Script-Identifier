@@ -3,7 +3,7 @@ import torch.nn as nn
 from dataset.BH_scene_dataset import BHSceneDataset
 from dataset.transformations import LanguageRecognitionTransforms
 from torch.utils.data import DataLoader, SubsetRandomSampler
-from models.backbones.vit_huge import VIT_huge_backbone
+from models.backbones.vit_large import VIT_LARGE_backbone
 from models.pair_ann import PAIR_ANN
 import numpy as np
 from tqdm import tqdm
@@ -16,7 +16,7 @@ _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 _reference_loader = None
 _model = None
 _transformation = None
-_backbone = VIT_huge_backbone().to(_device)
+_backbone = VIT_LARGE_backbone().to(_device)
 
 def get_test_transformation(
     backbone_type: str,
@@ -32,6 +32,7 @@ def get_test_transformation(
         img_size=img_size
     )
     logger.info("Test transformation created.")
+    _transformation = transformation
     return transformation
 
 def process_image(img: Image) -> torch.Tensor:
@@ -41,7 +42,7 @@ def process_image(img: Image) -> torch.Tensor:
     img = img.convert("RGB")
     img = np.array(img)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    transformation = get_test_transformation(backbone_type='vit_huge')
+    transformation = get_test_transformation(backbone_type='vit_large')
     img = transformation(image=img)['image'].unsqueeze(0).float().to(_device)
     logger.info("Image processed.")
     img = _backbone(img)
@@ -99,11 +100,10 @@ def load_model_once(model_path: str, device: str = "cuda") -> nn.Module:
 
     logger.info("Loading model...")
     model_config = {
-        'layers': [2560, 1024, 512, 1]
+        'layers': [2048, 1024, 512, 1]
     }
 
     _model = PAIR_ANN(config=model_config)
-    model_path = "plots/ann_pair_/vit_huge_pair_ann_fin_hope/vit_huge_pair_ann_fin_hope_0.0005_64.pt"
     _model.load_state_dict(torch.load(model_path, map_location=device))
     _model = _model.to(device)
     _model.eval()
@@ -142,7 +142,9 @@ def predict_class(
     
     # Calculate average probabilities
     avg_probs = {cls: similarities[cls]/counts[cls] for cls in similarities}
-    return max(avg_probs, key=avg_probs.get)
+    ## confidence -> float
+    confidence_score = max(avg_probs.values())
+    return max(avg_probs, key=avg_probs.get), confidence_score
 
 
 def test():
@@ -150,7 +152,7 @@ def test():
         root_dir="data/recognition",
         train_split=False,
         transformation=True,
-        backbone='vit_huge',
+        backbone='vit_large',
         gap_dim=1
     )
     expected_out = []
@@ -158,20 +160,19 @@ def test():
 
 
     # Load model
-    load_model_once(model_path="plots/ann_pair_/vit_huge_pair_ann_fin_hope_tuned/vit_huge_pair_ann_fin_hope_tuned_0.0005_256.pt")
+    load_model_once(model_path="ckpts/model_ann_a2.pt")
     load_reference_dataset_once(
         root_dir="data/recognition",
         transformation=True,
-        backbone='vit_huge',
+        backbone='vit_large',
         samples_per_class=100
     )
-
     
     for i in tqdm(range(len(test_dataset)), desc="Testing"):
         img, label = test_dataset[i]
         expected_out.append(label.item())
         # Predict class
-        predicted_class = predict_class(_model, img, _reference_loader)
+        predicted_class, _ = predict_class(_model, img, _reference_loader)
         actual_out.append(predicted_class)
 
     ## save results
@@ -206,22 +207,17 @@ def test():
     logger.info("Confusion matrix saved as confusion_matrix.png")
 
 
+_model = load_model_once(model_path="ckpts/model_ann_a2.pt")
+_reference_loader = load_reference_dataset_once(
+    root_dir="data/recognition",
+    transformation=True,
+    backbone='vit_large',
+    samples_per_class=100
+)
+_transformation = get_test_transformation(backbone_type='vit_large')
+_model.eval()
+
+
 if __name__ == "__main__":
     # Example usage
     test()
-    # img_path = "data/recognition/test/english/A_image_73_3.jpg"
-    # img = Image.open(img_path)
-    # img = process_image(img)
-    # print(img.shape)  # Check the shape of the processed image
-    # # Load reference dataset
-    # ref_loader = load_reference_dataset_once(
-    #     root_dir="data/recognition",
-    #     transformation=True,
-    #     backbone='vit_huge',
-    #     samples_per_class=100
-    # )
-    # # Load model
-    # load_model_once(model_path="plots/ann_pair_/vit_huge_pair_ann_fin_hope/vit_huge_pair_ann_fin_hope_0.0005_64.pt")
-    # # Predict class
-    # predicted_class = predict_class(_model, img, ref_loader)
-    # logger.info(f"Predicted class: {predicted_class}")
