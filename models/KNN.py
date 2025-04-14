@@ -1,289 +1,263 @@
-import os
-import cv2
-import datetime
 import numpy as np
-import pandas as pd
-import logging
-import matplotlib.pyplot as plt
-from tqdm import tqdm
-from skimage.feature import hog
-from sklearn.preprocessing import StandardScaler
+import os
+import torch
+from torch.utils.data import DataLoader
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score, classification_report
 from sklearn.decomposition import PCA
-from sklearn.model_selection import cross_val_score
-from imblearn.over_sampling import SMOTE
-import seaborn as sns
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import roc_curve, auc
-from sklearn.metrics import precision_recall_curve, average_precision_score
-from sklearn.pipeline import Pipeline
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
 from sklearn.model_selection import GridSearchCV
+from tqdm import tqdm
+import sys
+import torch.multiprocessing as mp
+from loguru import logger
+import time
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# Paths
-train_csv = "/Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/train.csv"
-test_csv = "/Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/test.csv"
-data_path = "/Users/prashastasrivastava/Desktop/projects/script-iden/Script-Identifier/data/recognition/"
-script_dir = os.path.dirname(os.path.abspath(__file__))
-logger = os.path.join(script_dir, "script_log_knn_hog.txt")
+sys.path.append('/kaggle/input/prml-dataset10/script-id')
+from dataset.BH_scene_dataset import BHSceneDataset
 
-# Language mapping
-Lmap = {
-    1: "assamese",
-    2: "bengali",
-    3: "english",
-    4: "gujarati",
-    5: "hindi",
-    6: "kannada",
-    7: "malayalam",
-    8: "marathi",
-    9: "punjabi",
-    10: "tamil",
-    11: "telugu",
-    12: "urdu"
+# --- Configuration ---
+PLOTS_DIR = "/kaggle/working/plots"
+BACKBONE = "sift"
+DATA_ROOT = '/kaggle/input/prml-dataset10/script-id/data/recognition'
+FEATURES_DIR = "/kaggle/working/features"
+FIXED_GAP_DIM = None
+
+# --- Hyperparameter Grid for GridSearchCV ---
+PARAM_GRID = {
+    'n_components': [50, 100, 200],
+    'whiten': [False, True],
+    'n_neighbors': [3, 5, 10],
+    'weights': ['uniform', 'distance'],
+    'metric': ['euclidean', 'cosine']
 }
 
-def select_lang():
-    while True:
-        print("\nSelect the language to train and test on:")
-        for num, lang in Lmap.items():
-            print(f"Enter {num} to train and test on {lang}")
-        try:
-            choice = input("\nEnter your choice: ").strip()
-            if not choice:
-                print("Error: Input cannot be empty. Please enter a number.")
-                continue
-            choice = int(choice)
-            if choice not in Lmap:
-                print(f"Error: Invalid choice '{choice}'. Please select a number between 1 and {len(Lmap)}.")
-                continue
-            return Lmap[choice]
-        except ValueError:
-            print("Error: Please enter a valid number.")
-
-# Logging setup
-logging.basicConfig(filename=logger, level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", filemode="a")
-logging.info("Script started.")
-
-def load_dataset(csv_path, selected_lang):
-    df = pd.read_csv(csv_path, skiprows=1, header=None, names=["image_path", "annotation", "script"])
-    print(f"Number of rows in CSV: {len(df)}", flush=True)
+# --- Helper Functions ---
+def extract_features(dataset, batch_size=128):
+    # Check number of GPUs
+    num_gpus = torch.cuda.device_count()
+    logger.info(f"Number of GPUs available: {num_gpus}")
     
-    x, y = [], []
-    logging.info(f"Loading dataset from {csv_path} for language: {selected_lang}")
+    dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=2,
+        pin_memory = False
+    )
+    X_list, y_list = [], []
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    logger.debug(f"Feature extraction using device: {device}")
+
+    # If multiple GPUs, wrap the dataset's backbone (assumed to be ViT) with DataParallel
+    if num_gpus > 1 and hasattr(dataset, 'backbone') and dataset.backbone is not None:
+        dataset.backbone = torch.nn.DataParallel(dataset.backbone)
+        logger.info("Wrapped backbone with DataParallel for multi-GPU processing")
     
-    for _, row in tqdm(df.iterrows(), total=len(df), desc="Loading Images", dynamic_ncols=True, mininterval=0.1):
-        img_path = os.path.join(data_path, row["image_path"].replace("\\", "/"))
-        if not os.path.exists(img_path):
-            logging.warning(f"File not found: {img_path}")
-            continue
+    for batch in tqdm(dataloader, desc="Extracting Features"):
+        X, y = batch
+        # X and y are processed by the backbone (on GPU if DataParallel is used)
+        X_list.append(X.cpu().numpy())  # Move back to CPU for NumPy
+        y_list.append(y.cpu().numpy())
+    return np.vstack(X_list), np.concatenate(y_list)
 
-        label = 1 if row["script"].lower() == selected_lang else 0
+def save_features(features_dir, backbone, X_train, y_train, X_test, y_test):
+    os.makedirs(features_dir, exist_ok=True)
+    np.save(os.path.join(features_dir, f"{backbone}_X_train.npy"), X_train)
+    np.save(os.path.join(features_dir, f"{backbone}_y_train.npy"), y_train)
+    np.save(os.path.join(features_dir, f"{backbone}_X_test.npy"), X_test)
+    np.save(os.path.join(features_dir, f"{backbone}_y_test.npy"), y_test)
+    logger.info(f"Saved features for backbone '{backbone}' to {features_dir}")
 
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        if img is None:
-            logging.warning(f"Error reading image: {img_path}")
-            continue
+def load_features(features_dir, backbone):
+    try:
+        X_train = np.load(os.path.join(features_dir, f"{backbone}_X_train.npy"))
+        y_train = np.load(os.path.join(features_dir, f"{backbone}_y_train.npy"))
+        X_test = np.load(os.path.join(features_dir, f"{backbone}_X_test.npy"))
+        y_test = np.load(os.path.join(features_dir, f"{backbone}_y_test.npy"))
+        logger.info(f"Loaded pre-extracted features for backbone '{backbone}' from {features_dir}")
+        return X_train, y_train, X_test, y_test
+    except FileNotFoundError:
+        logger.warning(f"Feature files for backbone '{backbone}' not found in {features_dir}.")
+        return None
 
-        img = cv2.resize(img, (64, 64))
-        hog_features = hog(img, pixels_per_cell=(8, 8), cells_per_block=(2, 2), feature_vector=True)
-        x.append(hog_features)
-        y.append(label)
-
-    print(f"Total images processed: {len(x)}", flush=True)
-    if len(x) == 0:
-        print("Error: No images were successfully loaded. Check image paths and file accessibility.", flush=True)
-        exit()
-
-    x, y = np.array(x), np.array(y)
-    unique_classes = np.unique(y)
-    if len(unique_classes) < 2:
-        logging.error(f"Only one class found: {unique_classes}. Check dataset.")
-        print(f"Error: Only one class found ({unique_classes}). Adjust dataset!", flush=True)
-        exit()
-
-    return x, y
-
-# Select language
-selected_lang = select_lang()
-if not selected_lang:
-    print("Invalid choice. Exiting program.", flush=True)
-    exit()
-
-# Load data
-x_train, y_train = load_dataset(train_csv, selected_lang)
-x_test, y_test = load_dataset(test_csv, selected_lang)
-
-logging.info(f"Train set size: {len(x_train)}, Test set size: {len(x_test)}")
-print(f"Train set size: {len(x_train)}, Test set size: {len(x_test)}", flush=True)
-
-# Feature scaling
-print("Scaling features...", flush=True)
-scaler = StandardScaler()
-x_train = scaler.fit_transform(x_train)
-x_test = scaler.transform(x_test)
-print("Feature scaling completed.", flush=True)
-
-# Apply PCA to reduce dimensionality
-print("Applying PCA to reduce dimensionality...", flush=True)
-pca = PCA(n_components=100)  # Reduce to 100 dimensions
-x_train = pca.fit_transform(x_train)
-x_test = pca.transform(x_test)
-print("PCA completed.", flush=True)
-
-# Handle unbalanced dataset with SMOTE
-logging.info("Applying SMOTE to handle unbalanced dataset...")
-print("Applying SMOTE...", flush=True)
-smote = SMOTE(random_state=42, sampling_strategy=0.3)  # Adjust ratio to 1:2 (Class 1:Class 0)
-x_train, y_train = smote.fit_resample(x_train, y_train)
-logging.info(f"After SMOTE, train set size: {len(x_train)}")
-print(f"After SMOTE, train set size: {len(x_train)}", flush=True)
-
-# Train KNN model with best k
-# best_k=3
-# print(f"Training KNN with best k={best_k}...", flush=True)
-# model = KNeighborsClassifier(n_neighbors=best_k, weights='distance', n_jobs=-1)
-# model.fit(x_train, y_train)
-# print("KNN model training completed.", flush=True)
-
-# # Evaluate with adjusted threshold
-# print("Predicting probabilities on test set...", flush=True)
-# y_pred_proba = model.predict_proba(x_test)[:, 1]
-# print("Probability prediction completed.", flush=True)
-
-# threshold = 0.7  # Adjust threshold to reduce false positives for Class 1
-# y_pred = (y_pred_proba >= threshold).astype(int)
-
-print("Performing Grid Search for KNN hyperparameters...", flush=True)
-pipeline = Pipeline([
-    ('scaler', StandardScaler()),
-    ('pca', PCA(n_components=100)),
-    ('smote', SMOTE(random_state=42)),
-    ('knn', KNeighborsClassifier(n_jobs=-1))
-])
-
-param_grid = {
-    'knn__n_neighbors': [3, 5, 7, 9],
-    'knn__weights': ['uniform', 'distance'],
-    'knn__metric': ['euclidean', 'manhattan']
-}
-
-grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='f1', n_jobs=-1)
-grid_search.fit(x_train, y_train)
-best_model = grid_search.best_estimator_
-print("Best parameters:", grid_search.best_params_)
-print("Grid Search completed.", flush=True)
-
-# Predict with the best model
-y_pred_proba = best_model.predict_proba(x_test)[:, 1]
-precision, recall, thresholds = precision_recall_curve(y_test, y_pred_proba)
-f1_scores = 2 * (precision * recall) / (precision + recall + 1e-10)
-best_threshold_idx = np.argmax(f1_scores)
-best_threshold = thresholds[best_threshold_idx]
-y_pred = (y_pred_proba >= best_threshold).astype(int)
-
-accuracy = accuracy_score(y_test, y_pred)
-logging.info(f"Model Accuracy: {accuracy * 100:.2f}%")
-logging.info("Classification Report:\n" + classification_report(y_test, y_pred))
-
-print(f"Model Accuracy: {accuracy * 100:.2f}%", flush=True)
-print("Classification Report:\n", classification_report(y_test, y_pred), flush=True)
-
-logging.info("Script finished.")
-print("Script finished.", flush=True)
-
-# Visualization
-plots_dir = os.path.join(script_dir, "plots")
-os.makedirs(plots_dir, exist_ok=True)
-
-def save_plot(x, y, model, language, plots_dir):  # Renamed to avoid overwriting built-in 'plot'
-    print("Generating decision boundary visualization...", flush=True)
-    pca = PCA(n_components=2)
-    x_reduced = pca.fit_transform(x)
-
-    x_min, x_max = x_reduced[:, 0].min() - 1, x_reduced[:, 0].max() + 1
-    y_min, y_max = x_reduced[:, 1].min() - 1, x_reduced[:, 1].max() + 1
-    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 50), np.linspace(y_min, y_max, 50))  # Reduced resolution
-
-    Z = model.predict(pca.inverse_transform(np.c_[xx.ravel(), yy.ravel()]))
-    Z = Z.reshape(xx.shape)
-
-    plt.figure(figsize=(8, 6))
-    plt.contourf(xx, yy, Z, alpha=0.3, cmap=plt.cm.Paired)
-    scatter = plt.scatter(x_reduced[:, 0], x_reduced[:, 1], c=y, cmap=plt.cm.Paired, edgecolors='k', label="Data Points")
-    plt.legend(handles=scatter.legend_elements()[0], labels=["Not " + language, language])
-    plt.xlabel("Principal Component 1")
-    plt.ylabel("Principal Component 2")
-    plt.title(f"Decision Boundary for {language} (KNN + HOG)")
-
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{language}_knn_hog_{timestamp}.png"
-    plot_path = os.path.join(plots_dir, filename)
-    plt.savefig(plot_path)
-    plt.close()  
-    
-    logging.info(f"Saved decision boundary plot for {language} at {plot_path}")
-    logging.info("=========================================")
-    print(f"Decision boundary plot saved at: {plot_path}", flush=True)
-    print("Decision boundary visualization completed.", flush=True)
-
-def save_confusion_matrix_plot(y_true, y_pred, language, plots_dir):
+# --- Plotting Functions ---
+def plot_confusion_matrix(y_true, y_pred, title="Confusion Matrix", filename="confusion_matrix.png"):
     cm = confusion_matrix(y_true, y_pred)
-    plt.figure(figsize=(6, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=["Not " + language, language], 
-                yticklabels=["Not " + language, language])
-    plt.xlabel("Predicted")
-    plt.ylabel("True")
-    plt.title(f"Confusion Matrix for {language}")
-    
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{language}_confusion_matrix_{timestamp}.png"
-    plot_path = os.path.join(plots_dir, filename)
-    plt.savefig(plot_path)
-    plt.close()
-    print(f"Confusion matrix plot saved at: {plot_path}", flush=True)
-
-def save_roc_curve_plot(y_true, y_pred_proba, language, plots_dir):
-    fpr, tpr, _ = roc_curve(y_true, y_pred_proba)
-    roc_auc = auc(fpr, tpr)
-    
     plt.figure(figsize=(8, 6))
-    plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (AUC = {roc_auc:.2f})')
-    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title(f'ROC Curve for {language}')
-    plt.legend(loc="lower right")
-    
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{language}_roc_curve_{timestamp}.png"
-    plot_path = os.path.join(plots_dir, filename)
-    plt.savefig(plot_path)
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
+    plt.title(title)
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.savefig(os.path.join(PLOTS_DIR, filename), bbox_inches='tight')
     plt.close()
-    print(f"ROC curve plot saved at: {plot_path}", flush=True)
 
-def save_pr_curve_plot(y_true, y_pred_proba, language, plots_dir):
-    precision, recall, _ = precision_recall_curve(y_true, y_pred_proba)
-    avg_precision = average_precision_score(y_true, y_pred_proba)
-    
-    plt.figure(figsize=(8, 6))
-    plt.plot(recall, precision, color='purple', lw=2, label=f'PR curve (AP = {avg_precision:.2f})')
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.title(f'Precision-Recall Curve for {language}')
-    plt.legend(loc="lower left")
-    
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{language}_pr_curve_{timestamp}.png"
-    plot_path = os.path.join(plots_dir, filename)
-    plt.savefig(plot_path)
+def plot_accuracy_vs_hyperparameters(grid_results, param_name, title="Accuracy vs Hyperparameter", filename="accuracy_vs_hyperparameter.png"):
+    param_values = grid_results['param_' + param_name]
+    scores = grid_results['mean_test_score']
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(x=param_values, y=scores)
+    plt.title(title)
+    plt.xlabel(param_name)
+    plt.ylabel('Mean CV Accuracy')
+    plt.savefig(os.path.join(PLOTS_DIR, filename), bbox_inches='tight')
     plt.close()
-    print(f"Precision-Recall curve plot saved at: {plot_path}", flush=True)
 
-# Call plotting functions
-save_plot(x_train, y_train, model, selected_lang, plots_dir)  # Pass plots_dir
-save_confusion_matrix_plot(y_test, y_pred, selected_lang, plots_dir)
-save_roc_curve_plot(y_test, y_pred_proba, selected_lang, plots_dir)
-save_pr_curve_plot(y_test, y_pred_proba, selected_lang, plots_dir)
+# --- Main Execution ---
+if __name__ == '__main__':
+    try:
+        mp.set_start_method("spawn", force=True)
+        logger.info("Attempting to set multiprocessing start method to 'spawn'")
+    except RuntimeError as e:
+        logger.warning(f"Could not set start method to 'spawn': {e}. Using default.")
+
+    if torch.cuda.is_available():
+        device = "cuda"
+        logger.info(f"CUDA GPU available: {torch.cuda.get_device_name(0)}")
+        if torch.cuda.device_count() > 1:
+            logger.info(f"Multiple GPUs detected: {torch.cuda.device_count()} devices")
+    else:
+        device = "cpu"
+        logger.warning("CUDA GPU not available. Running on CPU (feature extraction will be slow).")
+
+    os.makedirs(FEATURES_DIR, exist_ok=True)
+    os.makedirs(PLOTS_DIR, exist_ok=True)
+    logger.info(f"Using features directory: {FEATURES_DIR}")
+    logger.info(f"Using plots directory: {PLOTS_DIR}")
+
+    logger.info(f"--- Processing Backbone: {BACKBONE} ---")
+    start_time = time.time()
+
+    loaded_data = load_features(FEATURES_DIR, BACKBONE)
+
+    if loaded_data:
+        X_train, y_train, X_test, y_test = loaded_data
+    else:
+        logger.info(f"Extracting features for backbone '{BACKBONE}'...")
+        try:
+            if not os.path.isdir(DATA_ROOT):
+                raise FileNotFoundError(f"Data root directory not found: {DATA_ROOT}")
+            if device == 'cuda':
+                torch.cuda.empty_cache()
+                logger.debug("Cleared CUDA cache.")
+
+            logger.info("Loading training dataset...")
+            dataset_kwargs = {
+                'root_dir': DATA_ROOT,
+                'train_split': True,
+                'transformation': None,
+                'backbone': BACKBONE
+            }
+            if FIXED_GAP_DIM is not None:
+                dataset_kwargs['gap_dim'] = FIXED_GAP_DIM
+            train_dataset = BHSceneDataset(**dataset_kwargs)
+
+            X_train, y_train = extract_features(train_dataset)
+            logger.info(f"Training features extracted. Shape: {X_train.shape}, Labels shape: {y_train.shape}")
+
+            logger.info("Loading testing dataset...")
+            dataset_kwargs['train_split'] = False
+            test_dataset = BHSceneDataset(**dataset_kwargs)
+            X_test, y_test = extract_features(test_dataset)
+            logger.info(f"Testing features extracted. Shape: {X_test.shape}, Labels shape: {y_test.shape}")
+
+            # save_features(FEATURES_DIR, BACKBONE, X_train, y_train, X_test, y_test)
+
+        except FileNotFoundError as fnf_error:
+            logger.error(str(fnf_error))
+            logger.error("Cannot proceed without data. Exiting.")
+            exit()
+        except Exception as e:
+            logger.error(f"Fatal error during feature extraction for {BACKBONE}: {e}", exc_info=True)
+            logger.error("Cannot proceed without features. Exiting.")
+            exit()
+
+    feature_proc_time = time.time() - start_time
+    logger.info(f"Feature loading/extraction took {feature_proc_time:.2f} seconds.")
+
+    # --- Grid Search for PCA and KNN ---
+    logger.info("Starting GridSearchCV for PCA and KNN hyperparameters...")
+    grid_start_time = time.time()
+
+    best_acc = 0
+    best_params = None
+    best_model = None
+    all_grid_results = []
+
+    for n_components in PARAM_GRID['n_components']:
+        for whiten in PARAM_GRID['whiten']:
+            logger.info(f"Applying PCA with n_components={n_components}, whiten={whiten}")
+            pca = PCA(n_components=n_components, whiten=whiten)
+            X_train_pca = pca.fit_transform(X_train)
+            X_test_pca = pca.transform(X_test)
+            logger.info(f"PCA transformed training features to shape: {X_train_pca.shape}")
+            logger.info(f"Explained variance ratio: {np.sum(pca.explained_variance_ratio_):.4f}")
+
+            knn = KNeighborsClassifier(n_jobs=-1)
+            grid_search = GridSearchCV(
+                knn,
+                param_grid={
+                    'n_neighbors': PARAM_GRID['n_neighbors'],
+                    'weights': PARAM_GRID['weights'],
+                    'metric': PARAM_GRID['metric']
+                },
+                cv=5,
+                scoring='accuracy',
+                n_jobs=-1,
+                verbose=1
+            )
+            grid_search.fit(X_train_pca, y_train)
+            all_grid_results.append(grid_search.cv_results_)
+
+            logger.info(f"Best KNN parameters for PCA (n_components={n_components}, whiten={whiten}): {grid_search.best_params_}")
+            logger.info(f"Best cross-validation accuracy: {grid_search.best_score_:.4f}")
+
+            y_pred = grid_search.predict(X_test_pca)
+            test_acc = accuracy_score(y_test, y_pred)
+            test_f1 = f1_score(y_test, y_pred, average='weighted')
+            logger.info(f"Test accuracy: {test_acc:.4f}, Test F1 score: {test_f1:.4f}")
+
+            if test_acc > best_acc:
+                best_acc = test_acc
+                best_params = {
+                    'n_components': n_components,
+                    'whiten': whiten,
+                    **grid_search.best_params_
+                }
+                best_model = grid_search.best_estimator_
+
+    grid_time = time.time() - grid_start_time
+    logger.info(f"GridSearchCV completed in {grid_time:.2f} seconds.")
+
+    # --- Final Evaluation with Best Model ---
+    logger.success(f"\n--- Best Model Results ---")
+    logger.success(f"Backbone: {BACKBONE}")
+    logger.success(f"Best Parameters: {best_params}")
+    logger.success(f"Best Test Accuracy: {best_acc:.4f}")
+
+    pca = PCA(n_components=best_params['n_components'], whiten=best_params['whiten'])
+    X_train_pca = pca.fit_transform(X_train)
+    X_test_pca = pca.transform(X_test)
+    best_model.fit(X_train_pca, y_train)
+    y_pred = best_model.predict(X_test_pca)
+    final_acc = accuracy_score(y_test, y_pred)
+    final_f1 = f1_score(y_test, y_pred, average='weighted')
+
+    logger.success(f"Final Accuracy (recomputed): {final_acc:.4f}")
+    logger.success(f"Final F1 Score (weighted): {final_f1:.4f}")
+
+    # --- Plotting ---
+    plot_confusion_matrix(
+        y_test, y_pred,
+        title=f"Confusion Matrix for Best Model (Backbone: {BACKBONE})",
+        filename=f"confusion_matrix_{BACKBONE}.png"
+    )
+
+    plot_accuracy_vs_hyperparameters(
+        all_grid_results[0], 'n_neighbors',
+        title=f"Accuracy vs. n_neighbors (Backbone: {BACKBONE})",
+        filename=f"accuracy_vs_n_neighbors_{BACKBONE}.png"
+    )
+
+    logger.info("--- Script Finished ---")
