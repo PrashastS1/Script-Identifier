@@ -12,4 +12,4 @@ logreg_params:
   use_lda: true
   use_pca: true
 target:
-  language: punjabi
+  language: tamil
