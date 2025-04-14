@@ -29,34 +29,12 @@ def save_completed(progress_file, language):
         f.write(f"{language}\n")
 
 
-def run_for_all_languages():
-    config_path = "conifg/logreg.yaml"
-
+def run_binary_mode(config_path, exp_name, languages):
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
 
-    dataset_args = config["dataset"]
-    logreg_cfg = config["logreg_params"]
-    exp_name = logreg_cfg.get("exp_name", "logreg_batch")
-    backbone = dataset_args.get("backbone", "unknown")
-
-    # Load language mapping
-    with open('./dataset/language_encode.json') as f:
-        lang_map = yaml.safe_load(f)
-
-    languages = list(lang_map.keys())
-
-    # Setup logging and progress tracking
-    log_path = setup_logger("logs", exp_name)
-    print(f"[INFO] Batch logging to: {log_path}")
-
-    os.makedirs("models/Logistic/progress", exist_ok=True)
     progress_file = os.path.join("models", "Logistic", "progress", f"{exp_name}_completed.txt")
     completed = load_completed(progress_file)
-
-    logging.info(f"Backbone: {backbone}")
-    logging.info(f"Running PCA + LDA (multiclass) for {len(languages)} languages")
-    logging.info(f"Already completed: {sorted(list(completed))}")
 
     for lang in languages:
         if lang in completed:
@@ -66,25 +44,24 @@ def run_for_all_languages():
         print(f"\n[INFO] Running for language: {lang}")
         logging.info(f"----- Running for language: {lang} -----")
 
-        # Update config for this run
+        # Update config
         config["target"]["language"] = lang
         with open(config_path, "w") as f:
             yaml.dump(config, f)
 
-        # Run the test with live stdout/stderr (so tqdm shows)
+        # Call LogRegLDA
         process = subprocess.Popen(
             ["python", "-m", "models.Logistic.LogRegLDA"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            bufsize=1  # Line-buffered
+            bufsize=1
         )
 
-        # Stream output live and log
         with process.stdout:
             for line in process.stdout:
-                print(line, end='')         # Show in terminal
-                logging.info(line.strip())  # Log to file
+                print(line, end='')
+                logging.info(line.strip())
 
         returncode = process.wait()
 
@@ -96,5 +73,66 @@ def run_for_all_languages():
             print(f"[ERROR] {lang} failed — check logs.")
 
 
+def run_multiclass_mode():
+    print("[INFO] Running multiclass LDA once for all languages...")
+    logging.info("Running LogRegLDAMulticlass once (no language iteration)")
+
+    process = subprocess.Popen(
+        ["python", "-m", "models.Logistic.LogRegLDAMulticlass"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1
+    )
+
+    with process.stdout:
+        for line in process.stdout:
+            print(line, end='')
+            logging.info(line.strip())
+
+    returncode = process.wait()
+
+    if returncode == 0:
+        logging.info("[SUCCESS] LogRegLDAMulticlass completed.")
+    else:
+        logging.warning("[FAILURE] LogRegLDAMulticlass crashed or exited abnormally.")
+        print("[ERROR] LogRegLDAMulticlass failed — check logs.")
+
+
+def runcode():
+    config_path = "conifg/logreg.yaml"
+
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+
+    dataset_args = config["dataset"]
+    logreg_cfg = config["logreg_params"]
+    exp_name = logreg_cfg.get("exp_name", "logreg_batch")
+    backbone = dataset_args.get("backbone", "unknown")
+    lda_mode = logreg_cfg.get("lda_mode", "binary").lower()
+
+    log_path = setup_logger("logs", exp_name)
+    print(f"[INFO] Logging to: {log_path}")
+
+    logging.info(f"Backbone: {backbone}")
+    logging.info(f"LDA Mode: {lda_mode}")
+    logging.info(f"Experiment Name: {exp_name}")
+
+    if lda_mode == "binary":
+
+        # Load languages
+        with open('./dataset/language_encode.json') as f:
+            lang_map = yaml.safe_load(f)
+            
+        languages = list(lang_map.keys())
+        logging.info(f"Running binary LDA for {len(languages)} languages")
+        run_binary_mode(config_path, exp_name, languages)
+
+    else:
+
+        logging.info("Running Multiclass LDA")
+        run_multiclass_mode()
+
+
 if __name__ == "__main__":
-    run_for_all_languages()
+    runcode()
