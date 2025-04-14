@@ -10,8 +10,11 @@ models/Logistic/
 ├── LogRegLDA.py               # Pipeline supporting PCA + LDA + Logistic Regression
 ├── LogRegTest.py              # Batch evaluation for all languages (1-vs-rest LDA)
 ├── LogRegLDAMulticlass.py     # One-pass multiclass training using PCA + LDA
-├── progress/                  # Stores completed language logs to avoid recomputation
-├── LogRegHOG/                 # Old experimentation code
+├── progress/                  # Stores completed language logs to avoid recomputation [created after running your first experiment]
+└── LogRegHOG/                 # Old experimentation code
+
+Script-Identifier [created after running your first experiment]
+├── plots/                     # Decision boundary plots
 └── logs/                      # Per-experiment logs with metrics and reports
 ```
 
