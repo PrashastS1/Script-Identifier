@@ -6,58 +6,123 @@
   <title>Script-Identifier</title>
   <style>
     :root {
-      --bg: #121212;
-      --text: #f0f0f0;
-      --primary: #61dafb;
-      --accent: #00bcd4;
-      --gray: #333;
+      /* Dark theme color palette */
+      --bg-primary: #121212;
+      --bg-secondary: #1e1e1e;
+      --bg-elevated: #252525;
+      --primary: #CBB3BF;
+      --primary-dark: #6e78ff;
+      --secondary: #EF959C;
+      --accent: #ff79c6;
+      --text-primary: #f8f9fa;
+      --text-secondary: #ced4da;
+      --text-muted: #9ca3af;
+      --border: #333333;
+      --shadow: rgba(0, 0, 0, 0.3);
+      --code-bg: #2d2d2d;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
-      font-family: 'Times New Roman', Times, serif;
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: var(--bg);
-      color: var(--text);
+      background: var(--bg-primary);
+      color: var(--text-primary);
       line-height: 1.6;
+      overflow-x: hidden;
+      transition: background 0.5s ease-in-out;
     }
 
     header {
-      background: var(--accent);
-      color: #000;
-      padding: 2rem 1rem;
+      background: linear-gradient(135deg, #2b2b44, #1e1e30);
+      color: var(--text-primary);
+      padding: 3rem 1rem;
       text-align: center;
-      transition: all 0.4s ease-in-out;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      position: relative;
+      animation: fadeDown 1s ease-out forwards;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 30% 30%, rgba(142, 150, 255, 0.15), transparent 70%);
+      pointer-events: none;
     }
 
     header h1 {
       margin: 0;
-      font-size: 2.5rem;
+      font-size: 3rem;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+
+    header p {
+      font-size: 1.2rem;
+      opacity: 0.9;
+      margin-top: 0.75rem;
+      color: var(--text-secondary);
     }
 
     section {
-      padding: 0 1rem;
+      background: var(--bg-secondary);
+      margin: 1.5rem auto;
+      padding: 2rem;
+      border-radius: 12px;
       max-width: 900px;
-      margin: 1rem auto;
-      border-bottom: 1px solid var(--gray);
+      box-shadow: 0 4px 15px var(--shadow);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 1px solid var(--border);
+    }
+
+    section:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+      border-color: rgba(142, 150, 255, 0.3);
     }
 
     .collapsible {
       cursor: pointer;
-      background-color: transparent;
+      background: none;
       color: var(--primary);
       border: none;
       text-align: left;
-      outline: none;
-      font-size: 1.5rem;
+      font-size: 1.6rem;
+      font-weight: 600;
       width: 100%;
       padding: 1rem 0;
-      transition: all 0.3s ease;
-      font-family: inherit;
+      transition: color 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .collapsible::after {
+      content: "+";
+      font-size: 1.8rem;
+      font-weight: 300;
+    }
+
+    .collapsible.active::after {
+      content: "−";
     }
 
     .collapsible:hover {
-      color: #00ffff;
+      color: var(--secondary);
     }
 
     .content {
@@ -66,59 +131,119 @@
       opacity: 0;
       transform: translateY(-10px);
       transition: max-height 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
+      color: var(--text-secondary);
     }
 
     .content.active {
-      max-height: 2000px;
+      max-height: 3000px;
       opacity: 1;
       transform: translateY(0);
     }
 
     h2 {
       color: var(--primary);
-      padding-bottom: 0.25rem;
     }
 
-    code, .code-block {
-      background-color: #1e1e1e;
-      color: #ccc;
-      padding: 0.4rem 0.6rem;
+    code {
+      background: var(--code-bg);
+      color: var(--text-secondary);
+      padding: 0.2rem 0.4rem;
       border-radius: 4px;
-      font-family: monospace;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 0.9em;
     }
 
     .code-block {
       display: block;
       margin: 1rem 0;
       white-space: pre-wrap;
+      background: var(--code-bg);
+      color: #f8f9fa;
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 0.9em;
+      overflow-x: auto;
+      border: 1px solid #3e3e3e;
     }
 
     img {
       max-width: 100%;
-      margin: 1rem 0;
-      border: 1px solid #444;
-      border-radius: 6px;
+      margin: 1.5rem 0;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+      transition: transform 0.5s ease;
+      border: 1px solid var(--border);
+    }
+
+    img:hover {
+      transform: scale(1.02);
     }
 
     ul {
-      padding-left: 1.2rem;
+      padding-left: 1.5rem;
+      color: var(--text-secondary);
+    }
+
+    li {
+      margin-bottom: 0.5rem;
     }
 
     a {
       color: var(--primary);
       text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s ease, border-bottom-color 0.2s ease;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 2px;
     }
 
     a:hover {
-      text-decoration: underline;
+      color: var(--accent);
+      border-bottom-color: var(--accent);
     }
 
     footer {
-      background-color: #1a1a1a;
-      padding: 1rem;
+      background-color: #0f0f0f;
+      padding: 1.5rem;
       text-align: center;
       font-size: 0.9rem;
+      color: var(--text-muted);
       border-top: 1px solid #333;
+    }
+
+    @keyframes fadeDown {
+      0% {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    section {
+      animation: fadeIn 0.7s ease-in-out both;
+      animation-delay: calc(var(--animation-order, 0) * 100ms);
+    }
+
+    section:nth-child(1) { --animation-order: 1; }
+    section:nth-child(2) { --animation-order: 2; }
+    section:nth-child(3) { --animation-order: 3; }
+    section:nth-child(4) { --animation-order: 4; }
+    section:nth-child(5) { --animation-order: 5; }
+    section:nth-child(6) { --animation-order: 6; }
+    section:nth-child(7) { --animation-order: 7; }
+
+    strong {
+      color: var(--accent);
+      font-weight: 600;
     }
   </style>
 </head>
@@ -131,15 +256,14 @@
   <section>
     <button class="collapsible">About the Project</button>
     <div class="content">
-      <p><strong>Script-Identifier</strong> is a Pattern Recognition and Machine Learning (CSL2050) course project developed under the CSL2050 curriculum at IIT Jodhpur. The objective is to identify the script of text found in scene images using traditional machine learning algorithms and feature extraction techniques. Emphasis is placed on performance comparison, evaluation rigor, and model interpretability.</p>
+      <p><strong>Script-Identifier</strong> is a PRML course project under CSL2050 at IIT Jodhpur. It identifies the script of text in scene images using traditional machine learning methods with a focus on explainability and performance.</p>
       <ul>
-        <li>Classification across 13 Indian scripts</li>
-        <li>Feature extractors: HOG, SIFT, ResNet, VGG, Vision Transformer (ViT)</li>
-        <li>ML Models: Logistic Regression, SVM, KNN, ANN, Naive Bayes, Decision Trees, XGBoost</li>
-        <li>Dimensionality reduction: PCA, LDA</li>
-        <li>Visualizations: t-SNE, PCA plots, class distributions, decision boundaries</li>
-        <li>Modular code with YAML-based configuration</li>
-        <li>Dataset: <a href="https://github.com/Bhashini-IITJ/BharatSceneTextDataset" target="_blank">Bharat Scene Text Dataset</a></li>
+        <li>13 Indic scripts supported</li>
+        <li>Feature extractors: HOG, SIFT, ResNet, VGG, ViT</li>
+        <li>Models: LR, SVM, KNN, ANN, Naive Bayes, Decision Trees, XGBoost</li>
+        <li>PCA, LDA for reduction</li>
+        <li>t-SNE, PCA plots for visualizations</li>
+        <li><a href="https://github.com/Bhashini-IITJ/BharatSceneTextDataset" target="_blank">Dataset: Bharat Scene Text</a></li>
       </ul>
     </div>
   </section>
@@ -147,15 +271,15 @@
   <section>
     <button class="collapsible">How It Works</button>
     <div class="content">
-      <p>Each image is passed through a configurable feature extractor (e.g., HOG or ViT) to compute latent representations. These are then fed into classical ML classifiers. Dimensionality reduction and visualization techniques help understand class separability and model behavior.</p>
+      <p>Images are passed through feature extractors, then classified with traditional ML. Dimensionality reduction and plotting tools visualize separability and behavior.</p>
     </div>
   </section>
 
   <section>
     <button class="collapsible">Visual Output</button>
     <div class="content">
-      <p>Example: Decision boundary from Logistic Regression using HOG + PCA:</p>
-      <img src="assets\multiclass1.png" alt="Decision Boundary Visualization">
+      <p>Example: Logistic Regression decision boundary (HOG + PCA):</p>
+      <img src="assets/multiclass1.png" alt="Decision Boundary Visualization">
     </div>
   </section>
 
@@ -163,13 +287,13 @@
     <button class="collapsible">Project Structure</button>
     <div class="content">
       <ul>
-        <li><code>config/</code> – YAML experiment configurations</li>
-        <li><code>dataset/</code> – Custom PyTorch dataset and preprocessing</li>
-        <li><code>models/</code> – Traditional ML models and feature backbones</li>
-        <li><code>tools/</code> – Training and evaluation scripts</li>
-        <li><code>utils/</code> – Utility functions and plotting</li>
-        <li><code>Visualisation/</code> – t-SNE, PCA, and boundary visualizations</li>
-        <li><code>frontend/</code> – Next.js-based UI</li>
+        <li><code>config/</code> – YAML experiment configs</li>
+        <li><code>dataset/</code> – PyTorch dataset setup</li>
+        <li><code>models/</code> – ML models and backbones</li>
+        <li><code>tools/</code> – Training & evaluation scripts</li>
+        <li><code>utils/</code> – Helpers and plotters</li>
+        <li><code>Visualisation/</code> – PCA, t-SNE, boundary plots</li>
+        <li><code>frontend/</code> – Next.js UI</li>
         <li><code>main.py</code>, <code>ui.py</code>, <code>fastapi_server.py</code></li>
       </ul>
     </div>
@@ -179,16 +303,16 @@
     <button class="collapsible">How to Run</button>
     <div class="content">
       <pre class="code-block">
-# Run a model
+# Run model
 python -m models.logistic.LogBackBone
 
-# Train ANN on ViT features
+# Train ANN on ViT
 python -m tools.ann_train
 
-# Run API server
+# API server
 python fastapi_server.py
 
-# Run UI
+# Frontend UI
 cd frontend
 npm install
 npm run dev
@@ -200,11 +324,11 @@ npm run dev
     <button class="collapsible">Project Deliverables</button>
     <div class="content">
       <ul>
-        <li><strong>Report:</strong> Midterm and Final Reports submitted</li>
-        <li><strong>Spotlight Video:</strong> ✅ Submitted</li>
-        <li><strong>Web Demo:</strong> <a href="https://script-identifier.vercel.app" target="_blank">Live App</a></li>
-        <li><strong>GitHub:</strong> <a href="https://github.com/AurindumBanerjee/Script-Identifier" target="_blank">Repository</a></li>
-        <li><strong>Project Page:</strong> <a href="https://aurindumbanerjee.github.io/Script-Identifier/" target="_blank">View Page</a></li>
+        <li><strong>Reports:</strong> ✅ Midterm & Final</li>
+        <li><strong>Video:</strong> ✅ Spotlight Submitted</li>
+        <li><strong>Demo:</strong> <a href="https://script-identifier.vercel.app" target="_blank">Live App</a></li>
+        <li><strong>GitHub:</strong> <a href="https://github.com/AurindumBanerjee/Script-Identifier" target="_blank">Repo</a></li>
+        <li><strong>Page:</strong> <a href="https://aurindumbanerjee.github.io/Script-Identifier/" target="_blank">Project Page</a></li>
       </ul>
     </div>
   </section>
@@ -212,8 +336,8 @@ npm run dev
   <section>
     <button class="collapsible">Team & Acknowledgments</button>
     <div class="content">
-      <p>Developed by Team <strong>Lexiconauts</strong> under the CSL2050 course at IIT Jodhpur (Spring 2025).</p>
-      <p>Special thanks to the <a href="https://github.com/Bhashini-IITJ/BharatSceneTextDataset" target="_blank">Bhashini team</a> for the Bharat Scene Text Dataset.</p>
+      <p>By Team <strong>Lexiconauts</strong> – CSL2050, IIT Jodhpur (Spring 2025).</p>
+      <p>Thanks to <a href="https://github.com/Bhashini-IITJ/BharatSceneTextDataset" target="_blank">Bhashini team</a> for the dataset.</p>
     </div>
   </section>
 
@@ -229,6 +353,11 @@ npm run dev
         const content = this.nextElementSibling;
         content.classList.toggle("active");
       });
+    });
+
+    // Add animation delay to sections for staggered entrance
+    document.querySelectorAll('section').forEach((section, index) => {
+      section.style.setProperty('--animation-order', index + 1);
     });
   </script>
 </body>
