@@ -133,6 +133,15 @@ As per CSL2050 project requirements:
 
 
 ---
+## Citation 
+
+@misc{BSTD,
+   title      = {{B}harat {S}cene {T}ext {D}ataset},
+  howpublished = {\url{https://github.com/Bhashini-IITJ/BharatSceneTextDataset}},
+  year         = 2024,
+}
+
+---
 
 ## License
 
