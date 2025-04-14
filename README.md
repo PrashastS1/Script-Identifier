@@ -76,7 +76,27 @@ To be added model-wise.
 
 ## Dataset
 
-We use the **[Bharat Scene Text Dataset](https://github.com/Bhashini-IITJ/BharatSceneTextDataset)** containing scene text in 13 Indian scripts. Data splits are provided for training and testing.
+We use the **[Bharat Scene Text Dataset](https://github.com/Bhashini-IITJ/BharatSceneTextDataset)** containing scene text in 13 Indian scripts. 
+
+In the data, we specifically use the Cropped Word Recognition Set. Data splits are provided for training and testing.
+
+
+| Language | #Train | #Test|
+| :---: | :---: | :---: |
+| Assamese  | 2,623 | 1,343 |
+| Bengali | 4,968 | 1,161 |
+| English | 28,778 | 8,113 |
+| Gujarati | 1,956 | 693 |
+| Hindi | 14,855 | 4,034 |
+| Kannada | 2,241 | 693 |
+| Malayalam | 2,408 | 567 |
+| Marathi | 3,932 | 1,045 |
+| Odia | 3,176 | 1,022 |
+| Punjabi | 8,544 | 2,560 |
+| Tamil | 2,041 | 507 |
+| Telugu | 2,227 | 482 |
+|Total| 77,749 | 22,220 |
+
 
 ---
 
@@ -87,24 +107,13 @@ As per CSL2050 project requirements:
 | Component            | Status       |
 |----------------------|--------------|
 | Mid-Project Report   | ✅ Submitted  |
-| Final Report         | Pending   |
+| Final Report         | ✅ Submitted   |
 | GitHub Repository    | ✅ Updated    |
 | Project Page         | ✅ [`Web Page`](https://aurindumbanerjee.github.io/Script-Identifier/) |
-| Web Demo (Gradio)    | Pending   |
-| Spotlight Video      | Pending |
+| Web Demo (Gradio)    | ✅ Created   |
+| Spotlight Video      | ✅ Submitted |
 | Minutes of Meetings  | ✅ Maintained |
 
----
-
-## Performance Highlights
-
-| Model         | Feature       | Accuracy (%) |
-|---------------|---------------|--------------|
-| Logistic Reg. | HOG + PCA     | To be added         |
-| ANN           | ViT-Huge      | To be added         |
-| SVM           | ResNet        | To be added         |
-
-*Additional metrics and confusion matrices available in report.*
 
 ---
 
