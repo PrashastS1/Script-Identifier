@@ -6,6 +6,7 @@ This folder contains all modules, scripts, and batch pipelines for training and 
 
 models/Logistic/
 
+'''
 .
 ├── LogBackBone.py             # Baseline using HOG + Logistic Regression
 ├── LogRegLDA.py               # Pipeline supporting PCA + LDA + Logistic Regression
@@ -14,6 +15,7 @@ models/Logistic/
 ├── progress/                  # Stores completed language logs to avoid recomputation
 ├── LogRegHOG/                 # Old experimentation code
 └── logs/                      # Per-experiment logs with metrics and reports
+'''
 
 ## Techniques Used
 
