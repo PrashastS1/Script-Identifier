@@ -101,7 +101,7 @@ def main():
     print("[INFO] Classification Report:")
     print(report)
 
-    # Save plot
+    # Save decision boundary plots
     if save_plots:
         plot_dir = os.path.join("plots", "logreg", exp_name)
         plot_decision_boundary(x_train, y_train, model, lang, plot_dir)

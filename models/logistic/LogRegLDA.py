@@ -125,7 +125,7 @@ def main():
 
     lang_id = lang_map[lang]
 
-    # Extract features + binary labels
+    # Load features and binary labels
     x_train, y_train = load_features(train_dataset, lang_id)
     x_test, y_test = load_features(test_dataset, lang_id)
 
@@ -190,7 +190,7 @@ def main():
 
         logging.info(f"Decision boundary plot saved to: {plot_dir}")
 
-    # Logging ends [for our current experiment]
+    # Logging ends [for current experiment]
     logging.info("====================Run Completed====================")
 
 if __name__ == "__main__":
