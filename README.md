@@ -12,7 +12,7 @@ This project adheres to the CSL2050 guidelines, emphasizing rigorous evaluation,
 
 ## Project Team
 
-Developed by Team **Pending**  
+Developed by Team **Lexiconauts**  
 Under **CSL2050 - Pattern Recognition and Machine Learning**
 
 ---
@@ -25,7 +25,7 @@ Under **CSL2050 - Pattern Recognition and Machine Learning**
 - Feature extraction techniques: HOG, SIFT, ResNet, VGG, Vision Transformer (ViT)
 - Dimensionality reduction: PCA, LDA
 - Visualizations: t-SNE, PCA, class distributions, and decision boundaries
-- FastAPI and Gradio-based interfaces for inference and demo
+- FastAPI based interfaces for inference and demo
 - Modular, well-documented codebase with YAML-based configuration
 
 ---
@@ -70,7 +70,24 @@ pip install -r requirements.txt
 
 ## How to Run
 
-To be added model-wise.
+Refer to the models/logistic ReadMe.md for an example of how to run models. Every other model made also runs similarly. 
+
+Use the following code from root to run the model. [Follow path structure from root, separated via '.' instead of '\']
+```bash
+python -m model_folder.model_file
+```
+
+To run the fastapi server
+```bash
+python fastapi_server.py 
+```
+
+For UI 
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
 ---
 
@@ -81,7 +98,7 @@ We use the **[Bharat Scene Text Dataset](https://github.com/Bhashini-IITJ/Bharat
 In the data, we specifically use the Cropped Word Recognition Set. Data splits are provided for training and testing.
 
 
-| Language | #Train | #Test|
+| Language | Train | Test |
 | :---: | :---: | :---: |
 | Assamese  | 2,623 | 1,343 |
 | Bengali | 4,968 | 1,161 |
@@ -95,7 +112,7 @@ In the data, we specifically use the Cropped Word Recognition Set. Data splits a
 | Punjabi | 8,544 | 2,560 |
 | Tamil | 2,041 | 507 |
 | Telugu | 2,227 | 482 |
-|Total| 77,749 | 22,220 |
+|**Total**| 77,749 | 22,220 |
 
 
 ---
